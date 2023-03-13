@@ -40,7 +40,7 @@ def insertPersons(status):
     lastname = input("lastname: ")
     phone = input("phone number: ")
     mail = input("mail: ")
-    address = input("address ")
+    address = input("address: ")
     curs.execute(f'''INSERT INTO persons(name, lastname, phone, mail, address, status) 
     VALUES ({name}, {lastname}, {phone}, {mail}, {address}, {status}) ''')
     connection.commit()
