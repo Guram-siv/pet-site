@@ -122,13 +122,7 @@ while True:
         else:
           print("the input was incorrect...")
           continue
-      elif person_status == 2:
-
-
-        
-
-
-
+      #elif person_status == 2:
   elif action == "register":
     try:
       print("~~~~~~~~~~~~~~~~~~~\nWelcome\n~~~~~~~~~~~~~~~~~~~")
