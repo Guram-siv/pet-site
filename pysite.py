@@ -8,8 +8,15 @@ connection = psycopg2.connect(**params)
 curs = connection.cursor()
 
 
-def register_person(name, lastname, phone, mail, address, created, status):
+def register_person(status):
   try:
+    name = input("Name: ")
+    password= input("password: ")
+    lastname = input("Lastname: ")
+    phone = int(input("Phone number: "))   
+    mail = input("Mail: ")
+    address = input("Address: ")
+    created = date.today()
     curs.execute('''INSERT INTO persons(name, lastname, phone, mail, address, created, status) 
     VALUES (%s, %s, %s, %s, %s, %s, %s)''', (name, lastname, phone, mail, address, created, status))
     curs.execute("SELECT id FROM persons WHERE name = %s AND mail = %s", (name, mail))
@@ -27,33 +34,100 @@ def register_person(name, lastname, phone, mail, address, created, status):
   except(Exception, psycopg2.DatabaseError) as error:
     print(error)
 
-def register_pet(species, breed, gender, medical_condition, current_treatment, name, birthdate, owner_id):
+def register_pet(owner_id):
   try:
+    species = input("Species: ")
+    breed = input("breed: ")
+    gender = input("gender(M - male / F - female): ")
+    medical_condition = input("Medical condition (if none type healthy): ")
+    current_treatment = input("Current treatment(if none type healthy):")
+    petname = input("Pet name: ")
+    byear = int(input("pet birth year: "))
+    bmonth = int(input("Month: "))
+    bday = int(input("Day: "))
+    birthdate = date(byear, bmonth, bday)
     curs.execute('''INSERT INTO pets(species, breed, sex, medical_condition, current_treatment, name, birth_date, owner_id) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (species, breed, gender, medical_condition, current_treatment, name, birthdate, owner_id))
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (species, breed, gender, medical_condition, current_treatment, petname, birthdate, owner_id))
 
     connection.commit()
+    print("Pet registered succesfully!")
   except(Exception, psycopg2.DatabaseError) as error:
     print(error)
+
+def log_in(mail, password):
+  curs.execute("SELECT owners.password FROM owners JOIN persons ON owners.person_id = persons.id WHERE persons.mail = %s", ( mail, ))
+  userpassword = curs.fetchone()
+  if userpassword is not None:
+    if userpassword[0] == password:
+        log = True
+        curs.execute("SELECT persons.status FROM persons JOIN owners ON persons.id = owners.person_id WHERE persons.mail = %s AND owners.password = %s", (mail, password))
+        global person_status
+        person_s = curs.fetchone()
+        person_status = person_s[0]
+        curs.execute("SELECT persons.id FROM persons JOIN owners ON persons.id = owners.person_id WHERE persons.mail = %s AND owners.password = %s", (mail, password))
+        global person_id
+        person = curs.fetchone()
+        person_id = person[0]
+        curs.close()
+    else:
+      print("Incorrect password.")
+      log = False
+      return log
+  else:
+    print("Email not found.")
+    log = False
+    return log
+  
 
 while True:
   action = input("login or register\n: ")
   if action == "login":
     mail = input("Please enter your email: ")
-    curs.execute("SELECT owners.password FROM owners JOIN persons ON owners.person_id = persons.id WHERE persons.mail = %s", ( mail, ))
-    userpassword = curs.fetchone()
-
-    if userpassword is not None:
-        password = input("Please enter your password: ")
-        if userpassword[0] == password:
-            while True:
-              action = input("Login successful!\nif you want to exit type ( q ): ")
-              if action == "q":
-                break
+    password = input("Please enter your password: ")
+    log = log_in(mail, password)
+    if log == True:
+      if person_status == 1:
+        welcome = input("Welcome dear User,\n Do you want to add pet now? (y / n): ")
+        if welcome == "y":
+          curs.execute("INSERT INTO owners(person_id) VALUES (%s);", (person_id, ))
+          curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+          result = curs.fetchone()
+          owner_id = result[0]
+          register_pet(owner_id)
+        action = input("What should we do?\n 1) my pets\n2) my visits\n 0) log out \nq) Exit program \n: ")
+        if action == "1":
+          curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+          result = curs.fetchone()
+          owner_id = result[0]
+          curs.execute("SELECT * FROM pets WHERE owner_id = %s", (owner_id, ))
+          petname = curs.fetchall()
+          for pet in petname:
+            for i in pet:
+              print(i, end=' ')
+            print()
+        elif action == "2":
+          curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+          result = curs.fetchone()
+          owner_id = result[0]
+          curs.execute("SELECT * FROM visits WHERE owner_id = %s", (owner_id, ))
+          visits = curs.fetchall()
+          for visit in visits:
+            for i in visit:
+              print(i, end=' ')
+            print()
+        elif action == "0":
+          continue
+        elif action =="q":
+          break
         else:
-            print("Incorrect password.")
-    else:
-        print("Email not found.")
+          print("the input was incorrect...")
+          continue
+      elif person_status == 2:
+
+
+        
+
+
 
   elif action == "register":
     try:
@@ -69,19 +143,9 @@ who are you?\n\
 7) Pet owner, staff member and vet\n\: "))
     except:
       print("Please enter the given numbers...")
-    name = input("Name: ")
-    password= input("password: ")
-    lastname = input("Lastname: ")
-    try:
-      phone = int(input("Phone number: "))
-    except:
-      print("phone number should be phone number... exiting program")
-      break
-    mail = input("Mail: ")
-    address = input("Address: ")
-    created = date.today()
+    
 
-    register_person(name, lastname, phone, mail, address, created, choise)
+    register_person(choise)
     
     connection.commit()
     if choise == 2 or 3:
@@ -98,22 +162,15 @@ who are you?\n\
       curs.execute("INSERT INTO vets(person_id) VALUES(%s)", (person_id,))
       curs.close()
     else:
+      print("choise input was incorrect")
       continue
     if choise == 1 or 3 or 5 or 7:
       haspet = input("Do you want to register a pet?\n(y - yes / n - no): ")
       if haspet == "y" or "yes" or "Yes" or "YES":
-        species = input("Species: ")
-        breed = input("breed: ")
-        gender = input("gender(M - male / F - female): ")
-        medical_condition = input("Medical condition (if none type healthy): ")
-        current_treatment = input("Current treatment(if none type healthy):")
-        petname = input("Pet name: ")
-        byear = int(input("pet birth year: "))
-        bmonth = int(input("Month: "))
-        bday = int(input("Day: "))
-        birthdate = date(byear, bmonth, bday)
         owner_id = owner_id
-        register_pet(species, breed, gender, medical_condition, current_treatment, petname, birthdate, owner_id)
+        register_pet(owner_id)
+      elif haspet == "n" or "no" or "No" or "NO":
+        log = input("do you want to log in? (y - yes / n - no): ")
       
       else:
         continue
