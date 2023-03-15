@@ -45,8 +45,7 @@ def register_pet(owner_id):
     bday = int(input("Day: "))
     birthdate = date(byear, bmonth, bday)
     curs.execute('''INSERT INTO pets(species, breed, sex, name, birth_date, owner_id) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''', (species, breed, gender, petname, birthdate, owner_id))
-
+    VALUES (%s, %s, %s, %s, %s, %s)''', (species, breed, gender, petname, birthdate, owner_id))
     connection.commit()
     print("Pet registered succesfully!")
   except(Exception, psycopg2.DatabaseError) as error:
@@ -85,24 +84,29 @@ while True:
     log = log_in()
     if log == True:
       #if person_status == 1:
-        welcome = input("Welcome dear User,\n Do you want to add pet now? (y / n): ")
+        print("Welcome dear User, you registered as a pet owner")
+        welcome = input("Do you want to add pet now? (y / n): ")
         if welcome == "y":
           curs.execute("INSERT INTO owners(person_id) VALUES (%s);", (person_id, ))
           curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
           result = curs.fetchone()
           owner_id = result[0]
           register_pet(owner_id)
+        elif welcome == "n":
+          pass
+        else:
+          pass
         while True:
           action = input("\n\n\nWhat should we do?\n1) my pets\n2) my visits\n0) log out \nq) Exit program \n: ")
           if action == "1":
             curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
             result = curs.fetchone()
             owner_id = result[0]
-            curs.execute("SELECT species, breed, sex, medica_condition, current_treatment, resent_vaccination, name, birth_date FROM pets WHERE owner_id = %s", (owner_id, ))
+            curs.execute("SELECT species, breed, sex, medical_condition, current_treatment, resent_vaccination, name, birth_date FROM pets WHERE owner_id = %s", (owner_id, ))
             petname = curs.fetchall()
             for pet in petname:
               for i in pet:
-                print(i, end=', ')
+                print(i, end=' ')
               print()
           elif action == "2":
             curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
@@ -140,7 +144,7 @@ who are you?\n\
 4) Vet\n\
 5) Pet owner and Vet\n\
 6) Staff member and Vet\n\
-7) Pet owner, staff member and vet\n\: "))
+7) Pet owner, staff member and vet\n: "))
     except:
       print("Please enter the given numbers...")
     
@@ -148,29 +152,26 @@ who are you?\n\
     register_person(choise)
     
     connection.commit()
-    if choise == 2 or 3:
+    if choise == 2 or choise == 3:
       person_id = person_id
       curs.execute("INSERT INTO help_centre(person_id, status) VALUES (%s, %s)", (person_id, choise))
       curs.close()
-    elif choise == 4 or 5:
+    elif choise == 4 or choise == 5:
       person_id = person_id
       curs.execute("INSERT INTO vets(person_id) VALUES(%s)", (person_id,))
       curs.close()
-    elif choise == 6 or 7:
+    elif choise == 6 or choise == 7:
       person_id = person_id
       curs.execute("INSERT INTO help_centre(person_id, status) VALUES (%s, %s)", (person_id, choise))
       curs.execute("INSERT INTO vets(person_id) VALUES(%s)", (person_id,))
       curs.close()
-    else:
-      print("choise input was incorrect")
-      continue
-    if choise == 1 or 3 or 5 or 7:
+    
+    if choise == 1 or choise == 3 or choise == 5 or choise == 7:
       haspet = input("Do you want to register a pet?\n(y - yes / n - no): ")
-      if haspet == "y" or "yes" or "Yes" or "YES":
+      if haspet.lower() == "y" or haspet.lower() == "yes":
         owner_id = owner_id
         register_pet(owner_id)
-      #still persists to continue pet registration even if i pass n or no 
-      elif haspet == "n" or "no" or "No" or "NO":
+      elif haspet.lower() == "n" or haspet.lower() == "no":
         log = input("do you want to return to main menu? (y - yes / n - exit): ")
         if log == "n":
           break
