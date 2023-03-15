@@ -83,7 +83,7 @@ while True:
   if action == "login":
     log = log_in()
     if log == True:
-      #if person_status == 1:
+      if person_status == 1:
         print("Welcome dear User, you registered as a pet owner")
         welcome = input("Do you want to add pet now? (y / n): ")
         if welcome == "y":
@@ -95,7 +95,8 @@ while True:
         elif welcome == "n":
           pass
         else:
-          pass
+          print("something went wrong with input! logging out")
+          continue
         while True:
           action = input("\n\n\nWhat should we do?\n1) my pets\n2) my visits\n0) log out \nq) Exit program \n: ")
           if action == "1":
@@ -106,7 +107,7 @@ while True:
             petname = curs.fetchall()
             for pet in petname:
               for i in pet:
-                print(i, end=' ')
+                print(i, end=', ')
               print()
           elif action == "2":
             curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
@@ -131,7 +132,79 @@ while True:
           break
         else:
           continue
-      #elif person_status == 2:
+      elif person_status == 2 or person_status == 3:
+        if person_status == 3:
+          choise = input("It appears you have a pet... do you want to add it now?(y/n)\n:")
+          if choise == "y":
+            curs.execute("INSERT INTO owners(person_id) VALUES (%s);", (person_id, ))
+            curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+            result = curs.fetchone()
+            owner_id = result[0]
+            register_pet(owner_id)
+          elif choise == "n":
+            pass
+          else:
+            print("something went wrong with input! logging out")
+            continue
+        print("Welcome dear staff member")
+        while True:
+            action = input("what action should we do?\n1) List every owner, phone number and id\n2) List every vet, phone number and id\n3) List every pet name, type, breed and id\n4) Add pet(makes me owner\staff memeber)\n5) List my pets(only for pet owners)\n0) log out\nq) quit the program ")
+            if action == "1":
+              curs.execute("SELECT name, lastname, phone, id FROM persons WHERE status = 1")
+              persons = curs.fetchall()
+              for person in persons:
+                for i in person:
+                  print(i, end=', ')
+                print()
+            elif action == "2":
+              curs.execute("SELECT name, lastname, phone, id, status FROM persons WHERE status IN (4, 5)")
+              persons = curs.fetchall()
+              for person in persons:
+                for i in person:
+                  if i == 5:
+                      print("is vet", end=', ')
+                  else:
+                      print(i, end=', ')
+                print()
+            elif action == "3":
+              curs.execute("SELECT pets.name, pets.type, pets.breed, pets.id, persons.name || ' ' ||\
+ persons.lastname as owner_name FROM pets JOIN persons ON pets.owner_id = persons.id")
+              pets = curs.fetchall()
+              for pet in pets:
+                for i in pet:
+                  print(i, end=', ')
+                print()
+            elif action == "4":
+              register_pet(person_id)
+              curs.execute("SELECT status FROM persons WHERE id =%s", (person_id))
+              result = curs.fetchone()
+              stat = result[0]
+              if stat == "4":
+                curs.execute("UPDATE persons SET status = 5 WHERE id = %s", (person_id))
+                connection.commit()
+              else:
+                pass
+            elif action == "5":
+              curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+              result = curs.fetchone()
+              owner_id = result[0]
+              curs.execute("SELECT species, breed, sex, medical_condition, current_treatment, resent_vaccination, name, birth_date FROM pets WHERE owner_id = %s", (owner_id, ))
+              petname = curs.fetchall()
+              for pet in petname:
+                for i in pet:
+                  print(i, end=', ')
+                print()
+            elif action == "0":
+              exit = False
+              break
+            elif action =="q":
+              exit = True
+              break
+            else:
+              print("the input was incorrect...")
+              continue
+      elif person_status 
+
 
   elif action == "register":
     try:
