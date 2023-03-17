@@ -301,6 +301,156 @@ while True:
           else:
             print("the input was incorrect...")
             continue
+      elif person_status == 6 and person_status == 7:
+        print("Hello Dear staff/vet")
+        if person_status == 7:
+          choise = input("It appears you have a pet... do you want to add it now?(y/n)\n:")
+          if choise == "y":
+            curs.execute("INSERT INTO owners(person_id) VALUES (%s);", (person_id, ))
+            curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+            result = curs.fetchone()
+            owner_id = result[0]
+            register_pet(owner_id)
+          elif choise == "n":
+            pass
+        while True:
+          choose = input("do you want to enter as staff or vet?\n1)Staff member\n2)Vet ")
+          if choose == "1":
+            print("You are in staff sub menu")
+            action = input("what action should we do?\n1) List every owner, phone number and id\n2) List every vet, phone number and id\n3) List every pet name, type, breed and id\n4) Add my pet(makes me owner\staff memeber)\n5) List my pets(only for pet owners)\n0) log out\nq) quit the program ")
+            if action == "1":
+              curs.execute("SELECT name, lastname, phone, id FROM persons WHERE status = 1")
+              persons = curs.fetchall()
+              for person in persons:
+                for i in person:
+                  print(i, end=', ')
+                print()
+            elif action == "2":
+              curs.execute("SELECT name, lastname, phone, id, status FROM persons WHERE status IN (4, 5)")
+              persons = curs.fetchall()
+              for person in persons:
+                for i in person:
+                  if i == 5:
+                      print("is vet", end=', ')
+                  else:
+                      print(i, end=', ')
+                print()
+            elif action == "3":
+              curs.execute("SELECT pets.name, pets.type, pets.breed, pets.id, persons.name, pets.pet_id|| ' ' ||\
+ persons.lastname as owner_name FROM pets JOIN persons ON pets.owner_id = persons.id")
+              pets = curs.fetchall()
+              for pet in pets:
+                for i in pet:
+                  print(i, end=', ')
+                print()
+            elif action == "4":
+              register_pet(person_id)
+              curs.execute("SELECT status FROM persons WHERE id =%s", (person_id))
+              result = curs.fetchone()
+              stat = result[0]
+              if stat == "4":
+                curs.execute("UPDATE persons SET status = 5 WHERE id = %s", (person_id))
+                connection.commit()
+              else:
+                pass
+            elif action == "5":
+              curs.execute("SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
+              result = curs.fetchone()
+              owner_id = result[0]
+              curs.execute("SELECT species, breed, sex, medical_condition, current_treatment, resent_vaccination, name, birth_date FROM pets WHERE owner_id = %s", (owner_id, ))
+              petname = curs.fetchall()
+              for pet in petname:
+                for i in pet:
+                  print(i, end=', ')
+                print()
+            elif action == "0":
+              exit = False
+              break
+            elif action =="q":
+              exit = True
+              break
+            else:
+              print("the input was incorrect...")
+              continue
+          if choose == "2":
+            print("You are in vet sub menu")
+            action = input("What action should we perform?\n1) add a new entry in visits\n2) List my med history\n3) add my speciality \n4) add my pet(makes me owner/vet)\n0) log out\nq) exit program")
+          if action == "1":
+            owners_id = input("Please input owner id: ")
+            pets_id = input("Please input pet id: ")
+            diagnosis = input("What was the diagnosis?: ")
+            vaccination = input("Was pet vaccinated? (y/n): ")
+            visitdate = date.today()
+            if vaccination == "y":
+              vacdate = date.today()
+              curs.execute("INSERT INTO pets(resent_vaccination) VALUES (%s) WHERE pet_id = %s", (vacdate, pets_id))
+              connection.commit()
+            else:
+              pass
+            treat = input("Does pet have current treatment? (y/n):")
+            if treat == "y":
+              treatment = input("explain the treatment: ")
+              curs.execute("INSERT INTO pets(current_treatment) VALUES (%s) WHERE pet_id = %s", (treatment, pets_id))
+              connection.commit()
+            else:
+              pass
+            curs.execute("INSERT INTO visits(vet_id, pet_id, owner_id, diagnosis, date) VALUES (%s, %s, %s, %s, %s)", (vet_id, pets_id, owner_id, diagnosis, visitdate))
+            connection.commit()
+          elif action == "2":
+            curs.execute("SELECT * FROM visits WHERE vet_id = %s", (vet_id, ))
+            visits = curs.fetchall()
+            for visit in visits:
+              for i in visit:
+                print(i, end=', ')
+              print()
+          elif action == "3":
+            while True:
+              choose = input("1) add my speciality\n2) list specialities\n0) Go to main menu")
+              if choose == "1":
+                speciality = "My speciality: "
+                speciality.lower()
+                speciality.capitalize()
+                curs.execute("SELECT specialty FROM specialities")
+                results = curs.fetchall()
+                specialities_list = [result[0] for result in results]
+                if speciality in specialities_list:
+                  curs.execute("SELECT spec_id FROM specialities WHERE specialty = %s", (speciality))
+                  result = curs.fetchone()
+                  spec_id = result[0]
+                  curs.execute("INSERT INTO spec_combo(vet_id, spec_id) VALUES (%s, %s)", (vet_id, spec_id))
+                  connection.commit()
+                else:
+                  print(f"There is no {speciality} speciality in our database, either contact the staff or try again")
+                  continue
+              elif choose == "2":
+                curs.execute("SELECT specialty FROM specialities")
+                results = curs.fetchall()
+                specialities_list = [result[0] for result in results]
+                for s in specialities_list:
+                  print(s)
+              elif choose == "3":
+                break
+
+          elif action == "4":
+            register_pet(person_id)
+            curs.execute("SELECT status FROM persons WHERE id =%s", (person_id))
+            result = curs.fetchone()
+            stat = result[0]
+            if stat == "4":
+              curs.execute("UPDATE persons SET status = 5 WHERE id = %s", (person_id))
+              connection.commit()
+            else:
+              pass
+          elif action == "0":
+            exit = False
+            break
+          elif action =="q":
+            exit = True
+            break
+          else:
+            print("the input was incorrect...")
+            continue
+
 
 
 
