@@ -20,17 +20,16 @@ class Person:
         self.phone = phone
         self.address = address
 
-    def input_person_data(self, user_type):
+    def input_data(self, user_type):
         self.name = input("Name: ")
         self.lastname = input("Lastname: ")
         self.phone = int(input("Phone number: "))
         self.mail = input("Mail: ")
         self.password = input("password: ")
         self.address = input("Address: ")
-        self.status = user_type
-
-    def register(self):
+    def register(self, user_type):
         try:
+            self.status = user_type
             created = date.today()
             curs.execute('''INSERT INTO persons(name, lastname, mail, password, phone, address, created, status) 
       VALUES (%s, %s, %s, %s, %s, %s, %s,%s )''', (
@@ -91,6 +90,95 @@ class Person:
     def __repr__(self):
         return f"User (Name: {self.name}, {self.lastname})"
 
+class Pet:
+    def __init__(self, petname, species, breed, gender, byear, bmonth, bday) -> None:
+        self.petname = petname
+        self.species = species
+        self.breed = breed
+        self.gender = gender
+        self.byear = byear
+        self.bmonth = bmonth
+        self.bday = bday
+
+
+    def input_data(self):
+        self.petname = input("Pet name: ")
+        self.species = input("Type: ")
+        self.breed = input("breed: ")
+        self.gender = input("gender(M - male / F - female): ")
+        self.byear = int(input("pet birth year: "))
+        self.bmonth = int(input("Month: "))
+        self.bday = int(input("Day: "))
+        self.birthdate = date(self.byear, self.bmonth, self.bday)
+        
+
+    def register(self, person_id):
+        try:
+            self.person_id = person_id
+            curs.execute(
+                "INSERT INTO owners(person_id) VALUES (%s)", (self.person_id, ))
+            curs.execute(
+                "SELECT owner_id FROM owners WHERE person_id = %s", (self.person_id,))
+            result = curs.fetchone()
+            self.owner_id = result[0]  # getting owner_id from here and globalising it
+            curs.execute('''INSERT INTO pets(species, breed, sex, name, birth_date, owner_id) 
+        VALUES (%s, %s, %s, %s, %s, %s)''', (self.species, self.breed, self.gender, self.petname, self.birthdate, self.owner_id))
+            curs.execute(
+                "SELECT pet_id FROM pets WHERE owner_id = %s", (owner_id, ))
+            result = curs.fetchone()
+            self.pet_id = result[0]  # getting pet id from here
+            connection.commit()     
+
+            print(
+                f"Pet registered succesfully! your pet was granted id of {pet_id}")
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+
+
+    @classmethod
+    def _tuple_to_pet(cls, pet_tuple):
+        pet = cls(
+            pet_id = pet_tuple[0],
+            species = pet_tuple[1],
+            breed = pet_tuple[2],
+            gender = pet_tuple[3],
+            medical_condition = pet_tuple[4],
+            current_treatment = pet_tuple[5],
+            resent_vaccination = pet_tuple[6],
+            name = pet_tuple[7],
+            birth_date = pet_tuple[8],
+            owner_id = pet_tuple[9]
+        )
+        return pet
+
+
+    @classmethod
+    def get_all(cls):
+        try:
+            curs.execute(
+                "SELECT * FROM pets")
+            pets_collection = curs.fetchall()
+            pets = []
+            for pet_tuple in pets_collection:
+                pet = cls._tuple_to_pet(pet_tuple)
+                pets.append(pet)
+            return pets
+        except psycopg2.DatabaseError as db_error:
+            print(f"Can't get user data, Error: {db_error}")
+    
+
+    @classmethod
+    def from_db(cls, person_id):
+        try:
+            curs.execute(
+                f"SELECT * FROM pets WHERE id = {person_id}")
+            pet_tuple = curs.fetchone()
+            print(pet_tuple)
+            pet = cls._tuple_to_pet(pet_tuple)
+            return pet
+        except psycopg2.DatabaseError as db_error:
+            print(f"Can't get user data, Error: {db_error}")
+
 
 def register_pet(person_id):
     try:
@@ -102,7 +190,6 @@ def register_pet(person_id):
         bmonth = int(input("Month: "))
         bday = int(input("Day: "))
         birthdate = date(byear, bmonth, bday)
-        connection.commit()
         # inserting person id in owners to create owner id
         curs.execute(
             "INSERT INTO owners(person_id) VALUES (%s)", (person_id, ))
@@ -116,7 +203,8 @@ def register_pet(person_id):
         curs.execute(
             "SELECT pet_id FROM pets WHERE owner_id = %s", (owner_id, ))
         result = curs.fetchone()
-        pet_id = result[0]       # getting pet id from here
+        pet_id = result[0]  # getting pet id from here
+        connection.commit()     
 
         print(
             f"Pet registered succesfully! your pet was granted id of {pet_id}")
@@ -481,7 +569,7 @@ who are you?\n\
             print("Please enter the given numbers...")
 
         person = Person("", "", "", "")
-        person.input_person_data(choise).register()
+        person.input_person_data(choise)
         person.register()
 
         if choise == 2 or choise == 3:
