@@ -73,7 +73,7 @@ class Person:
             print(f"Can't get user data, Error: {db_error}")
 
     @classmethod
-    def from_db(cls, user_id):
+    def person_from_db(cls, user_id):
         try:
             curs.execute(
                 f"SELECT id, name, lastname, mail, password, address, phone, status FROM persons WHERE id = {user_id}")
@@ -168,10 +168,10 @@ class Pet:
     
 
     @classmethod
-    def from_db(cls, person_id):
+    def from_db(cls, owner_id):
         try:
             curs.execute(
-                f"SELECT * FROM pets WHERE id = {person_id}")
+                f"SELECT * FROM pets WHERE owner_id = {owner_id}")
             pet_tuple = curs.fetchone()
             print(pet_tuple)
             pet = cls._tuple_to_pet(pet_tuple)
@@ -179,6 +179,113 @@ class Pet:
         except psycopg2.DatabaseError as db_error:
             print(f"Can't get user data, Error: {db_error}")
 
+
+class Login:
+    def __init__(self, mail= None, userpassword= None):
+        self.mail = mail
+        self.userpassword = userpassword
+
+        #ar damaviwydes mail gavxado unique 
+        #radgan mere userebi aireva
+    def login(self):
+        self.mail = input("Please enter your email: ")
+        curs.execute("SELECT password FROM persons WHERE mail = %s", (self.mail, ))
+        self.userpassword = curs.fetchone()
+        if self.userpassword is not None:
+            password = input("Please enter your password: ")
+            if self.userpassword[0] == password:
+                curs.execute(
+                    "SELECT id FROM persons WHERE mail = %s AND password = %s", (self.mail, password))
+                person = curs.fetchone()
+                self.person_id = person[0]
+                
+            else:
+                print("Incorrect password.")
+        else:
+            print("Email not found.")
+        return person_status  #aq vareturneb person_statuss rom mere gavigo ra statusis pirovnebaa
+    def owner(self):
+        while True:
+                action = input(
+                    "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n0) log out \nq) Exit program \n: ")
+                if action == "1":
+                    owner_id = Convert_id.person_to_owner(self.person_id)
+                    pet = Pet.from_db(owner_id)
+                    species = pet[1]
+                    breed = pet[2]
+                    sex = pet[3]
+                    medical_condition = pet[4]
+                    current_treatment = pet[5]
+                    resent_vaccination = pet[6]
+                    pet_name = pet[7]
+                    birth_date = pet[8]
+                    print(f"Species: {species}, Breed: {breed}, Gender: {sex}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
+                elif action == "2":
+                    curs.execute("SELECT * FROM visits WHERE person_id = %s;", (person_id, ))
+                    result = curs.fetchone()
+                    visits = result[0]
+                    for visit in visits:
+                        visit_id = visit[0]
+                        vet_id = visit[1]
+                        pet_id = visit[2]
+                        owner_id = visit[3]
+                        diagnosis = visit[4]
+                        treatment = visit[5]
+                        date = visit[6]
+                        print(
+                            f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
+                    pass
+                    
+                    if visits is None:
+                        print("you dont have pets, hence you got no visits")
+                elif action == "0":
+                    exit = False
+                    break
+                elif action == "q":
+                    exit = True
+                    break
+                else:
+                    print("the input was incorrect...")
+                    continue
+        return exit # returns exit so after the loops decides what to do
+
+    def staff():
+        pass
+    def vet():
+        pass
+
+
+class Convert_id:
+    def person_to_owner(person_id):
+        curs.execute(f"SELECT owner_id FROM owners WHERE person_id = {person_id}")
+        result = curs.fetchone()
+        owner_id = result[0]
+        return owner_id
+    
+    def owner_to_pet(owner_id):
+        curs.execute(f"SELECT pet_id FROM pets WHERE owner_id = {owner_id}")
+        result = curs.fetchone()
+        pet_id = result[0]
+        return pet_id
+    
+    def person_to_vet(person_id):
+        curs.execute(f"SELECT vet_id FROM vets WHERE person_id = {person_id}")
+        result = curs.fetchone()
+        vet_id = result[0]
+        return vet_id
+    
+    def owner_to_visit(owner_id):
+        curs.execute(f"SELECT visit_id FROM visits WHERE owner_id = {owner_id} ")
+        result = curs.fetchone()
+        visit_id = result[0]
+        return visit_id
+    
+    def person_to_type(person_id):
+        curs.execute(f"SELECT status FROM persons WHERE id = {person_id}")
+        result = curs.fetchone()
+        vet_id = result[0]
+        return vet_id
+    
 
 def register_pet(person_id):
     try:
@@ -447,32 +554,9 @@ while True:
                 else:
                     print("something went wrong with input! logging out")
                     continue
-                while True:
-                    action = input(
-                        "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n0) log out \nq) Exit program \n: ")
-                    if action == "1":
-                        curs.execute(
-                            "SELECT owner_id FROM owners WHERE person_id = %s;", (person_id, ))
-                        result = curs.fetchone()
-                        owner_id = result[0]
-                        if owner_id is not None:
-                            curs.execute(
-                                "SELECT species, breed, sex, medical_condition, current_treatment, resent_vaccination, name, birth_date FROM pets WHERE owner_id = %s", (owner_id, ))
-                            pets = curs.fetchall()
-                            for pet in pets:
-                                species = pet[0]
-                                breed = pet[1]
-                                sex = pet[2]
-                                medical_condition = pet[3]
-                                current_treatment = pet[4]
-                                resent_vaccination = pet[5]
-                                pet_name = pet[6]
-                                birth_date = pet[7]
-                                print(
-                                    f"Species: {species}, Breed: {breed}, Gender: {sex}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
-                        else:
-                            print("you dont have pets currently")
-                    elif action == "2":
+                exit = Login.owner()
+                    
+                '''elif action == "2":
                         curs.execute(
                             "SELECT * FROM visits WHERE person_id = %s;", (person_id, ))
                         result = curs.fetchone()
@@ -498,7 +582,7 @@ while True:
                         break
                     else:
                         print("the input was incorrect...")
-                        continue
+                        continue'''
                 if exit == True:
                     break
                 else:
