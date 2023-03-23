@@ -198,12 +198,12 @@ class Login:
                     "SELECT id FROM persons WHERE mail = %s AND password = %s", (self.mail, password))
                 person = curs.fetchone()
                 self.person_id = person[0]
-                
             else:
                 print("Incorrect password.")
         else:
             print("Email not found.")
-        return person_status  #aq vareturneb person_statuss rom mere gavigo ra statusis pirovnebaa
+
+
     def owner(self):
         while True:
                 action = input(
@@ -213,15 +213,15 @@ class Login:
                     pet = Pet.from_db(owner_id)
                     species = pet[1]
                     breed = pet[2]
-                    sex = pet[3]
+                    gender = pet[3]
                     medical_condition = pet[4]
                     current_treatment = pet[5]
                     resent_vaccination = pet[6]
                     pet_name = pet[7]
                     birth_date = pet[8]
-                    print(f"Species: {species}, Breed: {breed}, Gender: {sex}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
+                    print(f"Species: {species}, Breed: {breed}, Gender: {gender}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
                 elif action == "2":
-                    curs.execute("SELECT * FROM visits WHERE person_id = %s;", (person_id, ))
+                    curs.execute("SELECT * FROM visits WHERE person_id = %s;", (self.person_id, ))
                     result = curs.fetchone()
                     visits = result[0]
                     for visit in visits:
@@ -232,12 +232,10 @@ class Login:
                         diagnosis = visit[4]
                         treatment = visit[5]
                         date = visit[6]
-                        print(
-                            f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
-                    pass
-                    
                     if visits is None:
                         print("you dont have pets, hence you got no visits")
+                    else:
+                        print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
                 elif action == "0":
                     exit = False
                     break
@@ -249,8 +247,81 @@ class Login:
                     continue
         return exit # returns exit so after the loops decides what to do
 
-    def staff():
-        pass
+
+    def staff(self):
+        while True:
+            print()
+            action = input("what action should we do?\n1) List every owner\n2) List every vet\
+    \n3) List every pet\n4) Add my pet(makes me owner\staff memeber)\n5) List my pets(only for pet owners)\
+    \n0) log out\nq) quit the program \n: ")
+            print()
+            if action == "1":
+                curs.execute("SELECT persons.name, persons.lastname, persons.status, pets.name, pets.type, pets.breed FROM persons JOIN pets ON persons.id = pets.owner_id WHERE persons.status in (1, 3, 5, 7)")
+                owners = curs.fetchall()
+                for owner in owners:
+                    owner_name = owner[0] + " " + owner[1]
+                    status = owner[2]
+                    pet_name = owner[3]
+                    pet_type = owner[4]
+                    pet_breed = owner[5]
+                print(f"Owner name: {owner_name}, Status: {status}, Pet name: {pet_name}, Pet type: {pet_type}, Pet breed: {pet_breed}")
+
+            elif action == "2":
+                curs.execute(
+                    "SELECT name, lastname, phone, id, status FROM persons WHERE status IN (4, 5)")
+                vets = curs.fetchall()
+                for vet in vets:
+                    vet_name = vet[0] + " " + vet[1]
+                    vet_status = "is vet" if vet[4] == 5 else ""
+                    vet_phone = vet[2]
+                    vet_id = vet[3]
+                print(f"Vet name: {vet_name}, Status: {vet_status}, Phone: {vet_phone}, ID: {vet_id}")
+
+            elif action == "3":
+                curs.execute("SELECT pets.name, pets.species, pets.breed, persons.name, pets.pet_id || ' ' || persons.lastname as owner_name FROM pets JOIN persons ON pets.owner_id = persons.id")
+                pet_owners = curs.fetchall()
+                for pet_owner in pet_owners:
+                    pet_name = pet_owner[0]
+                    pet_species = pet_owner[1]
+                    pet_breed = pet_owner[2]
+                    owner_name = pet_owner[3]
+                    owner_id = pet_owner[4]
+                print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {owner_name}, Owner ID: {owner_id}")
+
+            elif action == "4":
+                Pet.register(self.person_id)
+                type = Convert_id.person_to_type(self.person_id)
+                if type == "4":
+                    curs.execute(
+                        "UPDATE persons SET status = 5 WHERE id = %s", (self.person_id, ))
+                    connection.commit()
+                else:
+                    pass
+            elif action == "5":
+                owner_id = Convert_id.person_to_owner(self.person_id)
+                if owner_id is not None:
+                    pet = Pet.from_db(owner_id)
+                    species = pet[1]
+                    breed = pet[2]
+                    gender = pet[3]
+                    medical_condition = pet[4]
+                    current_treatment = pet[5]
+                    resent_vaccination = pet[6]
+                    pet_name = pet[7]
+                    birth_date = pet[8]
+                    print(f"Species: {species}, Breed: {breed}, Gender: {gender}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {name}, Birth Date: {birth_date}")
+                else:
+                    print("it appears you dont have a pet, add it from main menu.")
+            elif action == "0":
+                exit = False
+                break
+            elif action == "q":
+                exit = True
+                return exit
+            else:
+                print("the input was incorrect...")
+                continue
+
     def vet():
         pass
 
@@ -319,7 +390,7 @@ def register_pet(person_id):
         print(error)
 
 
-def log_in():
+'''def log_in():
     mail = input("Please enter your email: ")
     curs.execute("SELECT password FROM persons WHERE mail = %s", (mail, ))
     userpassword = curs.fetchone()
@@ -346,7 +417,7 @@ def log_in():
         print("Email not found.")
         log = False
         return log
-
+'''
 
 def stafflogin(person_id):
     print("Welcome dear staff member, your id is %s", (person_id, ))
