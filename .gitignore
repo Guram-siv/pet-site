@@ -2,3 +2,4 @@ petenv
 __pycache__
 *.sql
 teststuff
+pysql.py

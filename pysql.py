@@ -6,6 +6,28 @@ params = config()
 connection = psycopg2.connect(**params)
 curs = connection.cursor()
 
+
+
+
+
+
+curs.execute("SELECT name, species, breed, owner_id FROM pets")
+pet_owners = curs.fetchall()
+for pet_owner in pet_owners:
+    pet_name = pet_owner[0]
+    pet_species = pet_owner[1]
+    pet_breed = pet_owner[2]
+    owner_id = pet_owner[3]
+curs.execute(f"SELECT person_id FROM owners WHERE owner_id = {owner_id}")
+result = curs.fetchone()
+person_id = result[0]
+curs.execute(f"SELECT name, lastname FROM persons WHERE person_id = {person_id}")
+result = curs.fetchall()
+person_name = result[0]
+person_lastname = result[1]
+print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {owner_name}, Owner ID: {owner_id}")
+
+
 def connect():
   try:
     print("Connecting...\nPostgresSQL database version: ")
