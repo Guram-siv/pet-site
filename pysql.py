@@ -25,7 +25,7 @@ curs.execute(f"SELECT name, lastname FROM persons WHERE person_id = {person_id}"
 result = curs.fetchall()
 person_name = result[0]
 person_lastname = result[1]
-print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {owner_name}, Owner ID: {owner_id}")
+print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {person_name} {person_lastname}, Owner ID: {owner_id}")
 
 
 def connect():

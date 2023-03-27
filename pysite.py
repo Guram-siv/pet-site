@@ -94,14 +94,18 @@ class Person:
         return f"User (Name: {self.name}, {self.lastname})"
 
 class Pet:
-    def __init__(self, petname, species, breed, gender, byear, bmonth, bday) -> None:
-        self.petname = petname
+    def __init__(self, pet_id, species, breed, gender, medical_condition = None, current_treatment = None, resent_vaccination = None, name = None, birth_date = None, owner_id = None):
+        self.pet_id = pet_id
         self.species = species
         self.breed = breed
         self.gender = gender
-        self.byear = byear
-        self.bmonth = bmonth
-        self.bday = bday
+        self.medical_condition = medical_condition
+        self.current_treatment = current_treatment
+        self.resent_vaccination = resent_vaccination
+        self.name = name
+        self.birth_date = birth_date
+        self.owner_id = owner_id
+
 
     @classmethod
     def create_pet(cls):
@@ -117,18 +121,23 @@ class Pet:
         return pet
 
     def register(self, person_id):
-        try:
+        #try:
             self.person_id = person_id
-            curs.execute(
-                "INSERT INTO owners(person_id) VALUES (%s)", (self.person_id, ))
+            curs.execute(f"SELECT owner_id FROM owners WHERE person_id = {self.person_id}")
+            is_owner = curs.fetchone()
+            if is_owner is None:
+                curs.execute(
+                    "INSERT INTO owners(person_id) VALUES (%s)", (self.person_id, ))
+            else:
+                pass
             self.owner_id = Convert_id.person_to_owner(self.person_id)
             curs.execute('''INSERT INTO pets(species, breed, gender, name, birth_date, owner_id) 
         VALUES (%s, %s, %s, %s, %s, %s)''', (self.species, self.breed, self.gender, self.petname, self.birthdate, self.owner_id))
             self.pet_id = Convert_id.owner_to_pet(self.owner_id)
             connection.commit()     
             print(f"Pet registered succesfully! your pet was granted id: {self.pet_id}")
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
+        #except (Exception, psycopg2.DatabaseError) as error:
+            #print(error)
 
 
     @classmethod
@@ -207,7 +216,7 @@ class Login:
     def owner(self):
         while True:
                 action = input(
-                    "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n0) log out \nq) Exit program \n: ")
+                    "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n3) add pet \n0) log out \nq) Exit program \n: ")
                 if action == "1":
                     owner_id = Convert_id.person_to_owner(self.person_id)
                     pet = Pet.from_db(owner_id)
@@ -236,6 +245,9 @@ class Login:
                         print("you dont have pets, hence you got no visits")
                     else:
                         print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {visitdate}")
+                elif action == "3":
+                    pet = Pet.create_pet()
+                    pet.register(self.person_id)
                 elif action == "0":
                     exit = False
                     break
@@ -278,15 +290,21 @@ class Login:
                 print(f"Vet name: {vet_name}, Status: {vet_status}, Phone: {vet_phone}, ID: {vet_id}")
 
             elif action == "3":
-                curs.execute("SELECT pets.name, pets.species, pets.breed, persons.name, pets.pet_id || ' ' || persons.lastname as owner_name FROM pets JOIN persons ON pets.owner_id = persons.id")
+                curs.execute("SELECT name, species, breed, owner_id FROM pets")
                 pet_owners = curs.fetchall()
                 for pet_owner in pet_owners:
                     pet_name = pet_owner[0]
                     pet_species = pet_owner[1]
                     pet_breed = pet_owner[2]
-                    owner_name = pet_owner[3]
-                    owner_id = pet_owner[4]
-                print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {owner_name}, Owner ID: {owner_id}")
+                    owner_id = pet_owner[3]
+                curs.execute(f"SELECT person_id FROM owners WHERE owner_id = {owner_id}")
+                result = curs.fetchone()
+                person_id = result[0]
+                curs.execute(f"SELECT name, lastname FROM persons WHERE person_id = {person_id}")
+                result = curs.fetchall()
+                person_name = result[0]
+                person_lastname = result[1]
+                print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {person_name} {person_lastname}, Owner ID: {owner_id}")
 
             elif action == "4":
                 Pet.register(self.person_id)
@@ -454,8 +472,6 @@ class Convert_id:
 while True:
     action = input("login or register\n: ")
     if action == "login":
-        action = input("login or register\n: ")
-    if action == "login":
         login = Login("", "")
         login.login()
         if login.log == "No":
@@ -561,6 +577,13 @@ who are you?\n\
                 "INSERT INTO vets(person_id) VALUES(%s)", (person.person_id,))
 
         if choise == 1 or choise == 3 or choise == 5 or choise == 7:
+            curs.execute(f"SELECT person_id FROM owners WHERE person_id = {person.person_id}")
+            result = curs.fetchone()
+            if result[0] is None:
+                curs.execute(
+                    "INSERT INTO owners(person_id) VALUES (%s)", (person.person_id, ))
+            else:
+                pass
             haspet = input(
                 "Do you want to register a pet?\n(y - yes / n - no): ")
             if haspet.lower() == "y" or haspet.lower() == "yes":
