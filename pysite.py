@@ -268,7 +268,7 @@ class Login:
     \n0) log out\nq) quit the program \n: ")
             print()
             if action == "1":
-                curs.execute("SELECT persons.name, persons.lastname, persons.status, pets.name, pets.type, pets.breed FROM persons JOIN pets ON persons.id = pets.owner_id WHERE persons.status in (1, 3, 5, 7)")
+                curs.execute("SELECT persons.name, persons.lastname, persons.status, pets.name, pets.species, pets.breed FROM persons JOIN pets ON persons.id = pets.owner_id WHERE persons.status in (1, 3, 5, 7)")
                 owners = curs.fetchall()
                 for owner in owners:
                     owner_name = owner[0] + " " + owner[1]
@@ -279,16 +279,18 @@ class Login:
                 print(f"Owner name: {owner_name}, Status: {status}, Pet name: {pet_name}, Pet type: {pet_type}, Pet breed: {pet_breed}")
 
             elif action == "2":
-                curs.execute(
-                    "SELECT name, lastname, phone, id, status FROM persons WHERE status IN (4, 5)")
+                curs.execute("SELECT name, lastname, phone, id, status FROM persons WHERE status IN (4, 5)")
+                print("this block runned")
                 vets = curs.fetchall()
-                for vet in vets:
-                    vet_name = vet[0] + " " + vet[1]
-                    vet_status = "is vet" if vet[4] == 5 else ""
-                    vet_phone = vet[2]
-                    vet_id = vet[3]
-                print(f"Vet name: {vet_name}, Status: {vet_status}, Phone: {vet_phone}, ID: {vet_id}")
-
+                if vets is not None:
+                    for vet in vets:
+                        vet_name = vet[0] + " " + vet[1]
+                        vet_status = "is vet" if vet[4] == 5 else ""
+                        vet_phone = vet[2]
+                        vet_id = vet[3]
+                    print(f"Vet name: {vet_name}, Status: {vet_status}, Phone: {vet_phone}, ID: {vet_id}")
+                else:
+                    print("There are no vets recordings yet...")
             elif action == "3":
                 curs.execute("SELECT name, species, breed, owner_id FROM pets")
                 pet_owners = curs.fetchall()
@@ -486,7 +488,7 @@ while True:
                 break
             else:
                 continue
-        elif login.person_type == 2 or login.person_type == 3:
+        '''elif login.person_type == 2 or login.person_type == 3:
             if login.person_type == 3:
                 choise = input(
                     "It appears you have a pet... do you want to add it now?(y/n)\n:")
@@ -541,7 +543,7 @@ while True:
                     login.staff()
                 if choose == "2":
                     print("You are in vet sub menu")
-                    login.vet()
+                    login.vet()'''
 
     elif action == "register":
         try:
@@ -579,7 +581,7 @@ who are you?\n\
         if choise == 1 or choise == 3 or choise == 5 or choise == 7:
             curs.execute(f"SELECT person_id FROM owners WHERE person_id = {person.person_id}")
             result = curs.fetchone()
-            if result[0] is None:
+            if result is None:
                 curs.execute(
                     "INSERT INTO owners(person_id) VALUES (%s)", (person.person_id, ))
             else:
