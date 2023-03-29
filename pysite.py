@@ -348,14 +348,14 @@ class Login:
                 visitdate = dt.today()
                 if vaccination == "y":
                     vacdate = dt.today()
-                    curs.execute("UPDATE pets SET resent_vaccination = %s WHERE pet_id = %s", (vacdate, pets_id))
+                    curs.execute("UPDATE pets SET resent_vaccination = %s WHERE pet_id = %s", (vacdate, pet_id))
                     connection.commit()
                 else:
                     pass
                 treat = input("Does pet have current treatment? (y/n):")
                 if treat == "y":
                     treatment = input("explain the treatment: ")
-                    curs.execute("UPDATE pets SET current_treatment = %s WHERE pet_id = %s", (treatment, pets_id))
+                    curs.execute("UPDATE pets SET current_treatment = %s WHERE pet_id = %s", (treatment, pet_id))
                     connection.commit()
                 else:
                     pass
@@ -363,7 +363,10 @@ class Login:
                 curs.execute("INSERT INTO visits(vet_id, pet_id, owner_id, diagnosis, date) VALUES (%s, %s, %s, %s, %s)",
                 (vet_id, pet_id, owner_id, diagnosis, visitdate))
                 connection.commit()
+                print("visit added succesfully...\n\n")
+
             elif action == "2":
+                vet_id = Convert_id.person_to_vet(self.person_id)
                 curs.execute("SELECT * FROM visits WHERE vet_id = %s", (vet_id, ))
                 visits = curs.fetchall()
                 for visit in visits:
@@ -374,27 +377,26 @@ class Login:
                     diagnosis = visit[4]
                     treatment = visit[5]
                     date = visit[6]
-                print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
+                    print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
 
             elif action == "3":
                 while True:
                     choose = input(
-                        "1) add my speciality\n2) list specialities\n0) Go to main menu")
+                        "\n1) add my speciality\n2) list specialities\n0) Go to main menu\n:")
                     if choose == "1":
-                        speciality = "My speciality: "
-                        speciality.lower()
-                        speciality.capitalize()
+                        speciality = input("My speciality: ")
+                        speciality = speciality.lower().capitalize()
                         curs.execute("SELECT specialty FROM specialities")
                         results = curs.fetchall()
                         specialities_list = [result[0] for result in results]
                         if speciality in specialities_list:
-                            curs.execute(
-                                "SELECT spec_id FROM specialities WHERE specialty = %s", (speciality))
+                            vet_id = Convert_id.person_to_vet(self.person_id)
+                            curs.execute("SELECT spec_id FROM specialities WHERE specialty = %s", (speciality, ))
                             result = curs.fetchone()
                             spec_id = result[0]
-                            curs.execute(
-                                "INSERT INTO spec_combo(vet_id, spec_id) VALUES (%s, %s)", (vet_id, spec_id))
+                            curs.execute("INSERT INTO spec_combo(vet_id, spec_id) VALUES (%s, %s)", (vet_id, spec_id))
                             connection.commit()
+                            print("speciality added succesfully... \n")
                         else:
                             print(
                                 f"There is no {speciality} speciality in our database, either contact the staff or try again")
@@ -405,7 +407,8 @@ class Login:
                         specialities_list = [result[0] for result in results]
                         for s in specialities_list:
                             print(s)
-                    elif choose == "3":
+                    elif choose == "0":
+                        print("\n")
                         break
 
             elif action == "4":
