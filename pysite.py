@@ -218,29 +218,38 @@ class Login:
                     "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n3) add pet \n0) log out \nq) Exit program \n: ")
                 if action == "1":
                     owner_id = Convert_id.person_to_owner(self.person_id)
-                    pet = Pet.from_db(owner_id)
-                    species = pet[1]
-                    breed = pet[2]
-                    gender = pet[3]
-                    medical_condition = pet[4]
-                    current_treatment = pet[5]
-                    resent_vaccination = pet[6]
-                    pet_name = pet[7]
-                    birth_date = pet[8]
-                    print(f"Species: {species}, Breed: {breed}, Gender: {gender}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
+                    curs.execute(f"SELECT * FROM pets WHERE owner_id = {owner_id}")
+                    pets = curs.fetchall()
+                    if pets is not None: #else print does not work
+                        for pet in pets:
+                            species = pet[1]
+                            breed = pet[2]
+                            gender = pet[3]
+                            medical_condition = pet[4]
+                            current_treatment = pet[5]
+                            resent_vaccination = pet[6]
+                            pet_name = pet[7]
+                            birth_date = pet[8]
+                            print(f"Species: {species}, Breed: {breed}, Gender: {gender}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
+                    else:
+                        print("it appears you dont have a pet, add it from main menu.")
                 elif action == "2":
-                    curs.execute("SELECT * FROM visits WHERE person_id = %s;", (self.person_id, ))
+                    owner_id = Convert_id.person_to_owner(self.person_id)
+                    curs.execute("SELECT * FROM visits WHERE owner_id = %s;", (owner_id, ))
                     result = curs.fetchone()
-                    visits = result[0]
-                    for visit in visits:
-                        visit_id = visit[0]
-                        vet_id = visit[1]
-                        pet_id = visit[2]
-                        owner_id = visit[3]
-                        diagnosis = visit[4]
-                        treatment = visit[5]
-                        visitdate = visit[6]
-                        print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {visitdate}")
+                    if result is not None:
+                        visits = result[0]
+                        for visit in visits:
+                            visit_id = visit[0]
+                            vet_id = visit[1]
+                            pet_id = visit[2]
+                            owner_id = visit[3]
+                            diagnosis = visit[4]
+                            treatment = visit[5]
+                            visitdate = visit[6]
+                            print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {visitdate}")
+                    else:
+                        print("you dont have any visits\n")
                 elif action == "3":
                     pet = Pet.create_pet()
                     pet.register(self.person_id)
@@ -310,9 +319,9 @@ class Login:
                     pass
             elif action == "5":
                 owner_id = Convert_id.person_to_owner(self.person_id)
-                if owner_id is not None:
-                    curs.execute(f"SELECT * FROM pets WHERE owner_id = {owner_id}")
-                    pets = curs.fetchall()
+                curs.execute(f"SELECT * FROM pets WHERE owner_id = {owner_id}")
+                pets = curs.fetchall()
+                if pets is not None:
                     for pet in pets:
                         species = pet[1]
                         breed = pet[2]
