@@ -43,6 +43,7 @@ class Person:
             curs.execute(f"SELECT id FROM persons WHERE mail = '{self.mail}' AND password = '{self.password}'")
             result = curs.fetchone()
             self.person_id = result[0]
+        
         except (Exception, psycopg2.DatabaseError) as error:
             raise
             #print(error)
@@ -72,6 +73,7 @@ class Person:
                 person = cls._tuple_to_person(person_tuple)
                 persons.append(person)
             return persons
+        
         except psycopg2.DatabaseError as db_error:
             print(f"Can't get user data, Error: {db_error}")
 
@@ -84,6 +86,7 @@ class Person:
             print(person_tuple)
             person = cls._tuple_to_person(person_tuple)
             return person
+        
         except psycopg2.DatabaseError as db_error:
             print(f"Can't get user data, Error: {db_error}")
 
@@ -128,8 +131,10 @@ class Pet:
             if is_owner is None:
                 curs.execute(
                     "INSERT INTO owners(person_id) VALUES (%s)", (self.person_id, ))
+            
             else:
                 pass
+            
             self.owner_id = Convert_id.person_to_owner(self.person_id)
             curs.execute('''INSERT INTO pets(species, breed, gender, name, birth_date, owner_id) 
         VALUES (%s, %s, %s, %s, %s, %s)''', (self.species, self.breed, self.gender, self.petname, self.birthdate, self.owner_id))
@@ -139,8 +144,11 @@ class Pet:
         #except (Exception, psycopg2.DatabaseError) as error:
             #print(error)
 
-'''
-    @classmethod
+#i need to edit this part of code, so it fits perfectly
+#it does not work as it should, it needs to append to tuple
+#and then get from tuple data that i need 
+''' 
+    @classmethod 
     def _tuple_to_pet(cls, pet_tuple):
         pet = cls(
             pet_id = pet_tuple[0],
@@ -199,14 +207,17 @@ class Login:
         self.userpassword = curs.fetchone()
         if self.userpassword is not None:
             password = input("Please enter your password: ")
+            
             if self.userpassword[0] == password:
                 curs.execute(
                     "SELECT id FROM persons WHERE mail = %s AND password = %s", (self.mail, password))
                 person = curs.fetchone()
                 self.person_id = person[0]
                 self.log = "Yes"
+            
             else:
                 print("Incorrect password.")
+        
         else:
             print("Email not found.")
         self.person_type = Convert_id.person_to_type(self.person_id)
@@ -216,10 +227,12 @@ class Login:
         while True:
                 action = input(
                     "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n3) add pet \n0) log out \nq) Exit program \n: ")
+                
                 if action == "1":
                     owner_id = Convert_id.person_to_owner(self.person_id)
                     curs.execute(f"SELECT * FROM pets WHERE owner_id = {owner_id}")
                     pets = curs.fetchall()
+                    
                     if pets is not None: #else print does not work
                         for pet in pets:
                             species = pet[1]
@@ -231,12 +244,15 @@ class Login:
                             pet_name = pet[7]
                             birth_date = pet[8]
                             print(f"Species: {species}, Breed: {breed}, Gender: {gender}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
+                    
                     else:
                         print("it appears you dont have a pet, add it from main menu.")
+                
                 elif action == "2":
                     owner_id = Convert_id.person_to_owner(self.person_id)
                     curs.execute("SELECT * FROM visits WHERE owner_id = %s;", (owner_id, ))
                     result = curs.fetchone()
+                    
                     if result is not None:
                         visits = result[0]
                         for visit in visits:
@@ -248,17 +264,22 @@ class Login:
                             treatment = visit[5]
                             visitdate = visit[6]
                             print(f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {visitdate}")
+                    
                     else:
                         print("you dont have any visits\n")
+                
                 elif action == "3":
                     pet = Pet.create_pet()
                     pet.register(self.person_id)
+                
                 elif action == "0":
                     exit = False
                     break
+                
                 elif action == "q":
                     exit = True
                     break
+                
                 else:
                     print("the input was incorrect...")
                     continue
@@ -272,6 +293,7 @@ class Login:
     \n3) List every pet\n4) Add my pet(makes me owner\staff memeber)\n5) List my pets(only for pet owners)\
     \n0) log out\nq) quit the program \n: ")
             print()
+            
             if action == "1":
                 curs.execute("SELECT persons.name, persons.lastname, persons.status, pets.name, pets.species, pets.breed FROM persons JOIN pets ON persons.id = pets.owner_id WHERE persons.status in (1, 3, 5, 7)")
                 owners = curs.fetchall()
@@ -292,6 +314,7 @@ class Login:
                     vet_phone = vet[2]
                     vet_id = vet[3]
                     print(f"Vet name: {vet_name}, Status: {vet_status}, Phone: {vet_phone}, ID: {vet_id}")
+            
             elif action == "3":
                 curs.execute("SELECT p.name, p.species, p.breed, o.owner_id, per.name, per.lastname \
               FROM pets p \
@@ -317,6 +340,7 @@ class Login:
                     connection.commit()
                 else:
                     pass
+            
             elif action == "5":
                 owner_id = Convert_id.person_to_owner(self.person_id)
                 curs.execute(f"SELECT * FROM pets WHERE owner_id = {owner_id}")
@@ -334,12 +358,15 @@ class Login:
                         print(f"Species: {species}, Breed: {breed}, Gender: {gender}, Medical Condition: {medical_condition}, Current Treatment: {current_treatment}, Resent Vaccination: {resent_vaccination}, Name: {pet_name}, Birth Date: {birth_date}")
                 else:
                     print("it appears you dont have a pet, add it from main menu.")
+            
             elif action == "0":
                 exit = False
                 break
+            
             elif action == "q":
                 exit = True
                 break
+            
             else:
                 print("the input was incorrect...")
                 continue
@@ -355,17 +382,21 @@ class Login:
                 diagnosis = input("What was the diagnosis?: ")
                 vaccination = input("Was pet vaccinated? (y/n): ")
                 visitdate = dt.today()
+                
                 if vaccination == "y":
                     vacdate = dt.today()
                     curs.execute("UPDATE pets SET resent_vaccination = %s WHERE pet_id = %s", (vacdate, pet_id))
                     connection.commit()
+                
                 else:
                     pass
                 treat = input("Does pet have current treatment? (y/n):")
+                
                 if treat == "y":
                     treatment = input("explain the treatment: ")
                     curs.execute("UPDATE pets SET current_treatment = %s WHERE pet_id = %s", (treatment, pet_id))
                     connection.commit()
+                
                 else:
                     pass
                 vet_id = Convert_id.person_to_vet(self.person_id)
@@ -392,12 +423,14 @@ class Login:
                 while True:
                     choose = input(
                         "\n1) add my speciality\n2) list specialities\n0) Go to main menu\n:")
+                    
                     if choose == "1":
                         speciality = input("My speciality: ")
                         speciality = speciality.lower().capitalize()
                         curs.execute("SELECT specialty FROM specialities")
                         results = curs.fetchall()
                         specialities_list = [result[0] for result in results]
+                        
                         if speciality in specialities_list:
                             vet_id = Convert_id.person_to_vet(self.person_id)
                             curs.execute("SELECT spec_id FROM specialities WHERE specialty = %s", (speciality, ))
@@ -406,16 +439,19 @@ class Login:
                             curs.execute("INSERT INTO spec_combo(vet_id, spec_id) VALUES (%s, %s)", (vet_id, spec_id))
                             connection.commit()
                             print("speciality added succesfully... \n")
+                        
                         else:
                             print(
                                 f"There is no {speciality} speciality in our database, either contact the staff or try again")
                             continue
+                    
                     elif choose == "2":
                         curs.execute("SELECT specialty FROM specialities")
                         results = curs.fetchall()
                         specialities_list = [result[0] for result in results]
                         for s in specialities_list:
                             print(s)
+                    
                     elif choose == "0":
                         print("\n")
                         break
@@ -423,18 +459,23 @@ class Login:
             elif action == "4":
                 Pet.register(self.person_id)
                 stat = Convert_id.person_to_type(self.person_id)
+                
                 if stat == "4":
                     curs.execute(
                         "UPDATE persons SET status = 5 WHERE id = %s", (self.person_id))
                     connection.commit()
+                
                 else:
                     pass
+            
             elif action == "0":
                 exit = False
                 break
+            
             elif action == "q":
                 exit = True
                 break
+            
             else:
                 print("the input was incorrect...")
                 continue
@@ -489,15 +530,18 @@ while True:
         if login.log == "No":
             print("Login was unsuccesfull, try again...")
             continue
+        
         elif login.log == "Yes":
             print("Login was succesfull...")
             pass
+        
         if login.person_type == 1:
             exit = login.owner()
             if exit == True:
                 break
             else:
                 continue
+        
         elif login.person_type == 2 or login.person_type == 3:
             exit = login.staff()
             if exit == True:
@@ -511,6 +555,7 @@ while True:
                 break
             else:
                 continue
+        
         elif login.person_type == 6 or login.person_type == 7:
             print("Hello Dear staff/vet")
             while True:
@@ -519,14 +564,18 @@ while True:
                 if choose == "1":
                     print("You are in staff sub menu")
                     exit = login.staff()
+                
                 elif choose == "2":
                     print("You are in vet sub menu")
                     exit = login.vet()
+                
                 else:
                     print("the input was incorrect try again")
                     continue
+                
                 if exit == True:
                     break
+            
             if exit == True:
                 break
     elif action == "register":
@@ -541,6 +590,7 @@ who are you?\n\
 5) Pet owner and Vet\n\
 6) Staff member and Vet\n\
 7) Pet owner, staff member and vet\n: "))
+        
         except:
             print("Please enter the given numbers...")
 
@@ -552,10 +602,12 @@ who are you?\n\
             curs.execute(
                 "INSERT INTO help_centre(person_id, status) VALUES (%s, %s)", (person.person_id, choise))
             connection.commit()
+        
         elif choise == 4 or choise == 5:
             curs.execute(
                 "INSERT INTO vets(person_id) VALUES(%s)", (person.person_id,))
             connection.commit()
+        
         elif choise == 6 or choise == 7:
             curs.execute(
                 "INSERT INTO help_centre(person_id, status) VALUES (%s, %s)", (person.person_id, choise))
@@ -563,27 +615,34 @@ who are you?\n\
             curs.execute(
                 "INSERT INTO vets(person_id) VALUES(%s)", (person.person_id,))
             connection.commit()
+        
         if choise == 1 or choise == 3 or choise == 5 or choise == 7:
             curs.execute(f"SELECT person_id FROM owners WHERE person_id = {person.person_id}")
             result = curs.fetchone()
+            
             if result is None:
                 curs.execute(
                     "INSERT INTO owners(person_id) VALUES (%s)", (person.person_id, ))
                 connection.commit()
+            
             else:
                 pass
             haspet = input(
                 "Do you want to register a pet?\n(y - yes / n - no): ")
+            
             if haspet.lower() == "y" or haspet.lower() == "yes":
                 pet = Pet.create_pet()
                 pet.register(person.person_id)
+            
             elif haspet.lower() == "n" or haspet.lower() == "no":
                 log = input(
                     "do you want to return to main menu? (y - yes / n - exit): ")
                 if log == "n":
                     break
+                
                 else:
                     continue
+           
             else:
                 continue
             # last = input("registration has been succesfull!")
