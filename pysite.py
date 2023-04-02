@@ -10,8 +10,8 @@ curs = connection.cursor()
 
 class Person:
 
-    def __init__(self, name, lastname, mail, password,
-                 person_id=None, phone=None, address=None, user_type=None) -> None:
+    def __init__(self, name, lastname, mail, password
+                , phone, address, person_id=None, user_type=None) -> None:
         self.person_id = person_id
         self.name = name
         self.lastname = lastname
@@ -20,17 +20,7 @@ class Person:
         self.phone = phone
         self.address = address
 
-    @classmethod
-    def create_person(cls):
-        person = cls(None, None, None, None)
-        person.name = input("Name: ")
-        person.lastname = input("Lastname: ")
-        person.phone = int(input("Phone number: "))
-        person.mail = input("Mail: ")
-        person.password = input("password: ")
-        person.address = input("Address: ")
-        return person
-    
+
     def register(self, user_type):
         try:
             self.status = user_type
@@ -97,7 +87,11 @@ class Person:
         return f"User (Name: {self.name}, {self.lastname})"
 
 class Pet:
-    def __init__(self, pet_id, species, breed, gender, medical_condition = None, current_treatment = None, resent_vaccination = None, name = None, birth_date = None, owner_id = None):
+
+    def __init__(self, name, species, breed, gender, birth_date,
+                pet_id=None, medical_condition = None,
+                current_treatment = None, resent_vaccination = None, 
+                owner_id = None):
         self.pet_id = pet_id
         self.species = species
         self.breed = breed
@@ -110,21 +104,8 @@ class Pet:
         self.owner_id = owner_id
 
 
-    @classmethod
-    def create_pet(cls):
-        pet = cls(None, None, None, None, None, None, None) # Pet()
-        pet.petname = input("Pet name: ")
-        pet.species = input("Type: ")
-        pet.breed = input("breed: ")
-        pet.gender = input("gender(M - male / F - female): ")
-        pet.byear = int(input("pet birth year: "))
-        pet.bmonth = int(input("Month: "))
-        pet.bday = int(input("Day: "))
-        pet.birthdate = dt(pet.byear, pet.bmonth, pet.bday)
-        return pet
-
     def register(self, person_id):
-        #try:
+        try:
             self.person_id = person_id
             curs.execute(f"SELECT owner_id FROM owners WHERE person_id = {self.person_id}")
             is_owner = curs.fetchone()
@@ -141,13 +122,12 @@ class Pet:
             self.pet_id = Convert_id.owner_to_pet(self.owner_id)
             connection.commit()     
             print(f"Pet registered succesfully! your pet was granted id: {self.pet_id}")
-        #except (Exception, psycopg2.DatabaseError) as error:
-            #print(error)
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
 
 #i need to edit this part of code, so it fits perfectly
 #it does not work as it should, it needs to append to tuple
 #and then get from tuple data that i need 
-''' 
     @classmethod 
     def _tuple_to_pet(cls, pet_tuple):
         pet = cls(
@@ -163,8 +143,6 @@ class Pet:
             owner_id = pet_tuple[9]
         )
         return pet
-'''
-'''
     @classmethod
     def get_all(cls):
         try:
@@ -178,9 +156,7 @@ class Pet:
             return pets
         except psycopg2.DatabaseError as db_error:
             print(f"Can't get user data, Error: {db_error}")
-'''    
-
-'''    @classmethod
+    @classmethod
     def from_db(cls, owner_id):
         try:
             curs.execute(
@@ -191,9 +167,9 @@ class Pet:
             return pet
         except psycopg2.DatabaseError as db_error:
             print(f"Can't get user data, Error: {db_error}")
-'''
 
 class Login:
+
     def __init__(self, mail, userpassword, person_type=None, log = "No"):
         self.mail = mail
         self.userpassword = userpassword
@@ -201,20 +177,18 @@ class Login:
         self.log = log
         #ar damaviwydes mail gavxado unique 
         #radgan mere userebi aireva
+
+
     def login(self):
-        self.mail = input("Please enter your email: ")
         curs.execute("SELECT password FROM persons WHERE mail = %s", (self.mail, ))
         self.userpassword = curs.fetchone()
         if self.userpassword is not None:
-            password = input("Please enter your password: ")
-            
             if self.userpassword[0] == password:
                 curs.execute(
                     "SELECT id FROM persons WHERE mail = %s AND password = %s", (self.mail, password))
                 person = curs.fetchone()
                 self.person_id = person[0]
                 self.log = "Yes"
-            
             else:
                 print("Incorrect password.")
         
@@ -224,6 +198,7 @@ class Login:
 
 
     def owner(self):
+
         while True:
                 action = input(
                     "\n\n\nWhat should we do?\n1) my pets\n2) my visits\n3) add pet \n0) log out \nq) Exit program \n: ")
@@ -269,8 +244,22 @@ class Login:
                         print("you dont have any visits\n")
                 
                 elif action == "3":
-                    pet = Pet.create_pet()
-                    pet.register(self.person_id)
+                    while True:
+                        try:
+                            petname = input("Pet name: ")
+                            species = input("Type: ")
+                            breed = input("breed: ")
+                            gender = input("gender(M - male / F - female): ")
+                            byear = int(input("pet birth year: "))
+                            bmonth = int(input("Month: "))
+                            bday = int(input("Day: "))
+                            break
+                        except:
+                            print("incorrect input, try again.")
+                            continue
+                
+                    pet = Pet(petname, species, breed, gender, bday)
+                    pet.register(person.person_id)
                 
                 elif action == "0":
                     exit = False
@@ -331,8 +320,22 @@ class Login:
                     print(f"Pet name: {pet_name}, Species: {pet_species}, Breed: {pet_breed}, Owner name: {owner_name} {owner_lastname}, Owner ID: {owner_id}")
 
             elif action == "4":
-                pet = Pet.create_pet()
-                pet.register(self.person_id)
+                while True:
+                    try:
+                        petname = input("Pet name: ")
+                        species = input("Type: ")
+                        breed = input("breed: ")
+                        gender = input("gender(M - male / F - female): ")
+                        byear = int(input("pet birth year: "))
+                        bmonth = int(input("Month: "))
+                        bday = int(input("Day: "))
+                        break
+                    except:
+                        print("incorrect input, try again.")
+                        continue
+                
+                pet = Pet(petname, species, breed, gender, bday)
+                pet.register(person.person_id)
                 type = Convert_id.person_to_type(self.person_id)
                 if type == "4":
                     curs.execute(
@@ -525,7 +528,9 @@ class Convert_id:
 while True:
     action = input("login or register\n: ")
     if action == "login":
-        login = Login("", "")
+        mail = input("Please enter your email: ")
+        password = input("Please enter your password: ")
+        login = Login(mail, password)
         login.login()
         if login.log == "No":
             print("Login was unsuccesfull, try again...")
@@ -593,10 +598,22 @@ who are you?\n\
         
         except:
             print("Please enter the given numbers...")
+        while True:    
+            try:
+                name = input("Name: ")
+                lastname = input("Lastname: ")
+                phone = int(input("Phone number: "))
+                mail = input("Mail: ")
+                password = input("password: ")
+                address = input("Address: ")
+                break
+            except:
+                print("The input was incorrect try again")
+                continue
 
-        
-        person = Person.create_person()
+        person = Person(name, lastname, mail, password, phone, address)
         person.register(choise)
+
 
         if choise == 2 or choise == 3:
             curs.execute(
@@ -631,7 +648,22 @@ who are you?\n\
                 "Do you want to register a pet?\n(y - yes / n - no): ")
             
             if haspet.lower() == "y" or haspet.lower() == "yes":
-                pet = Pet.create_pet()
+                while True:
+                    try:
+                        petname = input("Pet name: ")
+                        species = input("Type: ")
+                        breed = input("breed: ")
+                        gender = input("gender(M - male / F - female): ")
+                        byear = int(input("pet birth year: "))
+                        bmonth = int(input("Month: "))
+                        bday = int(input("Day: "))
+                        bdate = dt(byear, bmonth, bday)
+                        break
+                    except:
+                        print("incorrect input, try again.")
+                        continue
+                
+                pet = Pet(petname, species, breed, gender, bdate)
                 pet.register(person.person_id)
             
             elif haspet.lower() == "n" or haspet.lower() == "no":
@@ -645,7 +677,7 @@ who are you?\n\
            
             else:
                 continue
-            # last = input("registration has been succesfull!")
+            print("registration has been succesfull!")
         else:
             continue
 curs.close()
