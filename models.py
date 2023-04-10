@@ -7,7 +7,6 @@ params = config()
 connection = psycopg2.connect(**params)
 curs = connection.cursor()
 
-glog = None
 
 
 class Person:
@@ -23,8 +22,7 @@ class Person:
 
     def register(self, user_type):
         try:
-            global glog
-            glog = False  # glog checks users location in menu
+            
             self.status = user_type
             created = dt.today()
             curs.execute('''INSERT INTO persons(name, lastname, mail, password, phone, address, created, status) VALUES (%s, %s, %s, %s, %s, %s, %s,%s )''', (
@@ -213,10 +211,7 @@ class Login:
         self.password = password
         self.person_type = person_type
         self.log = log
-        global glog  # glog is an global variable that changes according to login/register
-        glog = True
-        # ar damaviwydes mail gavxado unique
-        # radgan mere userebi aireva
+        
 
     def login(self):
         curs.execute(
@@ -245,7 +240,7 @@ class Login:
 class Convert_id:
 
     def person_to_owner(person_id):
-        curs.execute(f"SELECT owner_id FROM owners WHERE person_id = '{person_id}'")
+        curs.execute(f"SELECT owner_id FROM owners WHERE person_id = {person_id}")
         result = curs.fetchone()
         if result is None:
             return None

@@ -3,7 +3,9 @@ from config import config
 from datetime import date as dt
 
 
-from models import Pet, Person, Login, Convert_id, glog
+from models import Pet, Person, Login, Convert_id
+
+#from main import logged_in, person
 
 connection = None
 params = config()
@@ -11,8 +13,9 @@ connection = psycopg2.connect(**params)
 curs = connection.cursor()
 
 
-def register_pet(glog, person, login):
+def register_pet(logged_in, person, login):
     while True:
+
         try:
             petname = input("Pet name: ")
             species = input("Type: ")
@@ -23,28 +26,27 @@ def register_pet(glog, person, login):
             bday = int(input("Day: "))
             bdate = dt(byear, bmonth, bday)
             break
+
         except:
             print("incorrect input, try again.")
             continue
-    # glog is located in register and login methods accordingly
+
     pet = Pet(petname, species, breed, gender, bdate)
-    if glog == False:
-        pet.register(person.person_id)
-    elif glog == True:
-        pet.register(login.person_id)
+    if logged_in == False:
+        pet.register(person.person_id) #its a class here, dont get confused
+    elif logged_in == True:
+        pet.register(login.person_id) #same here
 
 # log in fuctions from here
 
 
 def owner_login(login, action):
     if action == "1":
+
         try:
             connection.rollback()
             curs.execute("BEGIN;")
 
-            #curs.execute(f"SELECT owner_id FROM owners WHERE person_id = {login.person_id}")
-            #result = curs.fetchone()
-            #owner_id = result[0]
             owner_id = Convert_id.person_to_owner(login.person_id)
             pets = Pet.from_db(owner_id)
             connection.commit()
@@ -57,13 +59,14 @@ def owner_login(login, action):
         except:
             connection.rollback()
             raise
+
     elif action == "2":
         owner_id = Convert_id.person_to_owner(login.person_id)
         curs.execute(
             "SELECT * FROM visits WHERE owner_id = %s;", (owner_id, ))
         result = curs.fetchone()
-
         if result is not None:
+
             visits = result[0]
             for visit in visits:
                 visit_id = visit[0]
@@ -76,82 +79,76 @@ def owner_login(login, action):
                 print(f"Visit ID: {visit_id},"
                         f"Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id},"
                         f"Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {visitdate}")
-            else:
-                print("you dont have any visits\n")
+        else:
+            print("you dont have any visits\n")
 
     elif action == "3":
-        register_pet(glog, None, login)
+        register_pet(True, None, login)
 
     else:
         print("the input was incorrect...")
 
 
-def staff_login(login):
-    while True:
-        print()
-        action = input("what action should we do?\n1) List every owner\n2)"
-                       " List every vet\n3) List every pet\n4) Add my pet(makes me owner\staff memeber)\n"
-                       "5) List my pets(only for pet owners)\n0) log out\nq) quit the program \n: ")
-        print()
+def staff_login(login, type, action):
 
-        if action == "1":
-            curs.execute("SELECT persons.name, persons.lastname, persons.status, pets.name, pets.species, "
-                         "pets.breed FROM persons JOIN pets ON persons.id=pets.owner_id "
-                         "WHERE persons.status in (1, 3, 5, 7)")
-            owners = curs.fetchall()
-            for owner in owners:
-                owner_name = owner[0] + " " + owner[1]
-                status = owner[2]
-                pet_name = owner[3]
-                pet_type = owner[4]
-                pet_breed = owner[5]
-                print(
-                    f"Owner name: {owner_name}, Status: {status},Pet name: {pet_name}, Pet type: {pet_type}, Pet breed: {pet_breed}")
+    if action == "1":
+        curs.execute("SELECT persons.name, persons.lastname, persons.status, pets.name, pets.species, "
+                        "pets.breed FROM persons JOIN pets ON persons.id=pets.owner_id "
+                        "WHERE persons.status in (1, 3, 5, 7)")
+        owners = curs.fetchall()
+        for owner in owners:
+            owner_name = owner[0] + " " + owner[1]
+            status = owner[2]
+            pet_name = owner[3]
+            pet_type = owner[4]
+            pet_breed = owner[5]
+            print(
+                f"Owner name: {owner_name}, Status: {status},Pet name: {pet_name}, Pet type: {pet_type}, Pet breed: {pet_breed}")
 
-        elif action == "2":
-            curs.execute(
-                "SELECT name, lastname, phone,"
-                "id, status FROM persons WHERE"
-                " status IN (4, 5)")
-            vets = curs.fetchall()
-            for vet in vets:
-                vet_name = vet[0] + " " + vet[1]
-                vet_status = "is vet" if vet[4] == 5 else ""
-                vet_phone = vet[2]
-                vet_id = vet[3]
-                print(
-                    f"Vet name: {vet_name}, "
-                    f"Status: {vet_status}, "
-                    f"Phone: {vet_phone},"
-                    f"ID: {vet_id}")
+    elif action == "2":
+        curs.execute(
+            "SELECT name, lastname, phone,"
+            "id, status FROM persons WHERE"
+            " status IN (4, 5)")
+        vets = curs.fetchall()
+        for vet in vets:
+            vet_name = vet[0] + " " + vet[1]
+            vet_status = "is vet" if vet[4] == 5 else ""
+            vet_phone = vet[2]
+            vet_id = vet[3]
+            print(
+                f"Vet name: {vet_name}, "
+                f"Status: {vet_status}, "
+                f"Phone: {vet_phone},"
+                f"ID: {vet_id}")
 
-        elif action == "3":
-            curs.execute("SELECT p.name, p.species, p.breed\
-                        , o.owner_id, per.name, per.lastname \
-                        FROM pets p \
-                        JOIN owners o ON p.owner_id = o.owner_id \
-                        JOIN persons per ON o.person_id = per.id")
-            pet_owners = curs.fetchall()
-            for pet_owner in pet_owners:
-                pet_name = pet_owner[0]
-                pet_species = pet_owner[1]
-                pet_breed = pet_owner[2]
-                owner_id = pet_owner[3]
-                owner_name = pet_owner[4]
-                owner_lastname = pet_owner[5]
-                print(
-                    f"Pet name: {pet_name},"
-                    f"Species: {pet_species},"
-                    f"Breed: {pet_breed},"
-                    f"Owner name: {owner_name} {owner_lastname},"
-                    f"Owner ID: {owner_id}")
+    elif action == "3":
+        curs.execute("SELECT p.name, p.species, p.breed\
+                    , o.owner_id, per.name, per.lastname \
+                    FROM pets p \
+                    JOIN owners o ON p.owner_id = o.owner_id \
+                    JOIN persons per ON o.person_id = per.id")
+        pet_owners = curs.fetchall()
+        for pet_owner in pet_owners:
+            pet_name = pet_owner[0]
+            pet_species = pet_owner[1]
+            pet_breed = pet_owner[2]
+            owner_id = pet_owner[3]
+            owner_name = pet_owner[4]
+            owner_lastname = pet_owner[5]
+            print(
+                f"Pet name: {pet_name},"
+                f"Species: {pet_species},"
+                f"Breed: {pet_breed},"
+                f"Owner name: {owner_name} {owner_lastname},"
+                f"Owner ID: {owner_id}")
+    if type == 3 or type == 7:
 
-        elif action == "4":
-            register_pet(glog, None, login)
-            type = Convert_id.person_to_type(login.person_id)
-            if type == "4":
+        if action == "4":
+            register_pet(True, None, login)
+            if type == 3:
                 curs.execute(
-                    "UPDATE persons SET status = 5 WHERE id = %s", (login.person_id, ))
+                    "UPDATE persons SET status = 3 WHERE id = %s", (login.person_id, ))
                 connection.commit()
             else:
                 pass
@@ -161,20 +158,13 @@ def staff_login(login):
             pets = Pet.from_db(owner_id)
             for pet in pets:
                 print(str(pet))
-
-        elif action == "0":
-            exit = False
-            break
-
-        elif action == "q":
-            exit = True
-            break
-    return exit
+    
+    else:
+        print("the input was incorrect...")
 
 
-def vet_login(login):
-    while True:
-        action = input("What action should we perform?\n1) add a new entry in visits\n2) List my med history\n3) add my speciality \n4) add my pet(makes me owner/vet)\n0) log out\nq) exit program\n:")
+def vet_login(login, type, action):
+
         if action == "1":
             owner_id = input("Please input owner id: ")
             pet_id = input("Please input pet id: ")
@@ -207,20 +197,24 @@ def vet_login(login):
 
             print("visit added succesfully...\n\n")
         elif action == "2":
+
             vet_id = Convert_id.person_to_vet(login.person_id)
-            curs.execute(
-                "SELECT * FROM visits WHERE vet_id = %s", (vet_id, ))
+            curs.execute("SELECT * FROM visits WHERE vet_id = %s", (vet_id, ))
             visits = curs.fetchall()
-            for visit in visits:
-                visit_id = visit[0]
-                vet_id = visit[1]
-                pet_id = visit[2]
-                owner_id = visit[3]
-                diagnosis = visit[4]
-                treatment = visit[5]
-                date = visit[6]
-                print(
-                    f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
+            if visits is not None:  # check if visits list is not empty
+                for visit in visits:
+                    visit_id = visit[0]
+                    vet_id = visit[1]
+                    pet_id = visit[2]
+                    owner_id = visit[3]
+                    diagnosis = visit[4]
+                    treatment = visit[5]
+                    date = visit[6]
+                    print(
+                        f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
+            else:
+                print("\nyou dont have any visits\n")
+
         elif action == "3":
             while True:
                 choose = input(
@@ -259,27 +253,27 @@ def vet_login(login):
                 elif choose == "0":
                     print("\n")
                     break
-        elif action == "4":
-            register_pet(glog)  # checks
-            type = Convert_id.person_to_type(login.person_id)
+        if type == 5 or type == 7:
+            if action == "4":
+                register_pet(True, None, login)
+            elif action == "5":
+                try:
 
-            if type == "4":
-                curs.execute(
-                    "UPDATE persons SET status = 5 WHERE id = %s", (login.person_id))
-                connection.commit()
+                    connection.rollback()
+                    curs.execute("BEGIN;")
 
-            else:
-                pass
-
-        elif action == "0":
-            exit = False
-            break
-
-        elif action == "q":
-            exit = True
-            break
+                    owner_id = Convert_id.person_to_owner(login.person_id)
+                    pets = Pet.from_db(owner_id)
+                    connection.commit()
+                    if pets is None:
+                        print("You dont have pets...")
+                    else:
+                        for pet in pets:
+                            print(str(pet))
+            
+                except:
+                    connection.rollback()
+                    raise
 
         else:
             print("the input was incorrect...")
-            continue
-    return exit
