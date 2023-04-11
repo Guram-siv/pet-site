@@ -34,9 +34,12 @@ class Person:
             result = curs.fetchone()
             self.person_id = result[0]
 
+        except psycopg2.IntegrityError as error:
+            print(f"\nMail is taken: {error}\n")
+            return False
+
         except (Exception, psycopg2.DatabaseError) as error:
-            raise
-            # print(error)
+            print(error)
 
     @classmethod
     def _tuple_to_person(cls, person_tuple):

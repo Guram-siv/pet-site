@@ -3,7 +3,7 @@ from config import config
 from datetime import date as dt
 
 
-from models import Pet, Person, Login, Convert_id
+from models import Pet, Convert_id, Login, Person
 
 #from main import logged_in, person
 
@@ -11,6 +11,16 @@ connection = None
 params = config()
 connection = psycopg2.connect(**params)
 curs = connection.cursor()
+
+
+
+def init_login(mail, password):
+    login = Login(mail, password)
+    return login
+
+def init_person(name, lastname, mail, password, phone, address):
+    person = Person(name, lastname, mail, password, phone, address)
+    return person
 
 
 def register_pet(logged_in, person, login):
@@ -166,36 +176,40 @@ def staff_login(login, type, action):
 def vet_login(login, type, action):
 
         if action == "1":
-            owner_id = input("Please input owner id: ")
-            pet_id = input("Please input pet id: ")
-            diagnosis = input("What was the diagnosis?: ")
-            vaccination = input("Was pet vaccinated? (y/n): ")
-            visitdate = dt.today()
+            try:
+                owner_id = input("Please input owner id: ")
+                pet_id = input("Please input pet id: ")
+                diagnosis = input("What was the diagnosis?: ")
+                vaccination = input("Was pet vaccinated? (y/n): ")
+                visitdate = dt.today()
 
-            if vaccination == "y":
-                vacdate = dt.today()
+                if vaccination == "y":
+                    vacdate = dt.today()
+                    curs.execute(
+                        "UPDATE pets SET resent_vaccination = %s WHERE pet_id = %s", (vacdate, pet_id))
+                    connection.commit()
+
+                else:
+                    pass
+                treat = input("Does pet have current treatment? (y/n):")
+
+                if treat == "y":
+                    treatment = input("explain the treatment: ")
+                    curs.execute(
+                        "UPDATE pets SET current_treatment = %s WHERE pet_id = %s", (treatment, pet_id))
+                    connection.commit()
+
+                else:
+                    pass
+                vet_id = Convert_id.person_to_vet(login.person_id)
                 curs.execute(
-                    "UPDATE pets SET resent_vaccination = %s WHERE pet_id = %s", (vacdate, pet_id))
+                    "INSERT INTO visits(vet_id, pet_id, owner_id, diagnosis, date) VALUES (%s, %s, %s, %s, %s)",
+                            (vet_id, pet_id, owner_id, diagnosis, visitdate))
                 connection.commit()
-
-            else:
-                pass
-            treat = input("Does pet have current treatment? (y/n):")
-
-            if treat == "y":
-                treatment = input("explain the treatment: ")
-                curs.execute(
-                    "UPDATE pets SET current_treatment = %s WHERE pet_id = %s", (treatment, pet_id))
-                connection.commit()
-
-            else:
-                pass
-            vet_id = Convert_id.person_to_vet(login.person_id)
-            curs.execute("INSERT INTO visits(vet_id, pet_id, owner_id, diagnosis, date) VALUES (%s, %s, %s, %s, %s)",
-                         (vet_id, pet_id, owner_id, diagnosis, visitdate))
-            connection.commit()
-
-            print("visit added succesfully...\n\n")
+                print("visit added succesfully...\n\n")
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(f"visit was not added... see error: {error}")
+                
         elif action == "2":
 
             vet_id = Convert_id.person_to_vet(login.person_id)
@@ -211,7 +225,8 @@ def vet_login(login, type, action):
                     treatment = visit[5]
                     date = visit[6]
                     print(
-                        f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id}, Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
+                        f"Visit ID: {visit_id}, Vet ID: {vet_id}, Pet ID: {pet_id}, Owner ID: {owner_id},"
+                        f" Diagnosis: {diagnosis}, Treatment: {treatment}, Date: {date}")
             else:
                 print("\nyou dont have any visits\n")
 
@@ -240,7 +255,8 @@ def vet_login(login, type, action):
 
                     else:
                         print(
-                            f"There is no {speciality} speciality in our database, either contact the staff or try again")
+                            f"There is no {speciality} speciality in our database,"
+                             "either contact the staff or try again")
                         continue
 
                 elif choose == "2":

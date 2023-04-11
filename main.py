@@ -4,12 +4,15 @@ from datetime import date as dt
 
 
 from general_logic import (
+    init_login,
+    init_person,
     vet_login,
     staff_login,
     owner_login,
     register_pet
 )
-from models import Person, Pet, Convert_id, Login
+
+
 
 connection = None
 params = config()
@@ -24,7 +27,9 @@ while True:
         logged_in = True
         mail = input("Please enter your email: ")
         password = input("Please enter your password: ")
-        login = Login(mail, password)
+
+        login = init_login(mail, password) #initialising in general_logic
+
         login.login()
         if login.log == "No":
             print("Login was unsuccesfull, try again...")
@@ -302,7 +307,7 @@ while True:
                 print("The input was incorrect try again")
                 continue
 
-        person = Person(name, lastname, mail, password, phone, address)
+        person = init_person(name, lastname, mail, password, phone, address)
         person.register(choise)
 
         if choise == 2 or choise == 3:
