@@ -1,24 +1,11 @@
-import psycopg2
-from config import config
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from datetime import date as dt
 
-
 from general_logic import (
-    init_login,
-    init_person,
-    vet_login,
-    staff_login,
-    owner_login,
-    register_pet
+
+
 )
-
-
-
-connection = None
-params = config()
-connection = psycopg2.connect(**params)
-curs = connection.cursor()
-
 
 # program body starts here
 while True:
@@ -280,57 +267,8 @@ while True:
 
     elif action == "register":
         logged_in = False
-        try:
-            print("~~~~~~~~~~~~~~~~~~~\nWelcome\n~~~~~~~~~~~~~~~~~~~")
-            choise = int(input("who are you?\n" +
-                               "1) Pet owner\n" +
-                               "2) Staff member\n" +
-                               "3) Pet owner and Staff member\n" +
-                               "4) Vet\n" +
-                               "5) Pet owner and Vet\n" +
-                               "6) Staff member and Vet\n" +
-                               "7) Pet owner, staff member and vet\n: "))
 
-        except:
-            print("Please enter the given numbers...")
-            continue
-        while True:
-            try:
-                name = input("Name: ")
-                lastname = input("Lastname: ")
-                phone = int(input("Phone number: "))
-                mail = input("Mail: ")
-                password = input("password: ")
-                address = input("Address: ")
-                break
-            except:
-                print("The input was incorrect try again")
-                continue
 
-        person = init_person(name, lastname, mail, password, phone, address)
-        person.register(choise)
-
-        if choise == 2 or choise == 3:
-            curs.execute(
-                "INSERT INTO help_centre(person_id, status) VALUES (%s, %s)", (person.person_id, choise))
-            connection.commit()
-
-        elif choise == 4 or choise == 5:
-            curs.execute(
-                "INSERT INTO vets(person_id) VALUES(%s)", (person.person_id,))
-            connection.commit()
-
-        elif choise == 6 or choise == 7:
-            curs.execute(
-                "INSERT INTO help_centre(person_id, status) VALUES (%s, %s)", (person.person_id, choise))
-            connection.commit()
-            curs.execute(
-                "INSERT INTO vets(person_id) VALUES(%s)", (person.person_id,))
-            connection.commit()
-
-        if choise == 1 or choise == 3 or choise == 5 or choise == 7:
-            curs.execute(f"INSERT INTO owners(person_id) VALUES ({person.person_id})")
-            connection.commit()
             haspet = input(
                 "Do you want to register a pet?\n(y - yes / n - no): ")
 

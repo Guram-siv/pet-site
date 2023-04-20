@@ -1,29 +1,97 @@
-import psycopg2
-from config import config
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from datetime import date as dt
 
 
-from models import Pet, Convert_id, Login, Person
+from models import (
+    Person,
+    Pet,
+    Vet,
+    HelpCentre,
+    Status,
+    Speciality,
+    Owner,
+    SpecCombo,
+    Visit,
+    db
+)
 
-#from main import logged_in, person
+def register_person():
+    while True:
+        try:
+            print("~~~~~~~~~~~~~~~~~~~\nWelcome\n~~~~~~~~~~~~~~~~~~~")
+            choise = int(input("who are you?\n" +
+            "1) Pet owner\n" +
+            "2) Staff member\n" +
+            "3) Pet owner and Staff member\n" +
+            "4) Vet\n" +
+            "5) Pet owner and Vet\n" +
+            "6) Staff member and Vet\n" +
+            "7) Pet owner, staff member and vet\n: "))
 
-connection = None
-params = config()
-connection = psycopg2.connect(**params)
-curs = connection.cursor()
+        except:
+            print("Please enter the given numbers...")
+            continue
+        while True:
+            try:
+                name = input("Name: ")
+                lastname = input("Lastname: ")
+                phone = int(input("Phone number: "))
+                mail = input("Mail: ")
+                password = input("password: ")
+                address = input("Address: ")
+                date = dt.today()
+                person = Person(name = name, lastname = lastname, phone = phone,
+                                mail = mail, address = address, created =  date,
+                                status = choise, password = password)
+                db.session.add(person)
+                db.session.commit()
+                break
+            except:
+                db.session.rollback()
+                print("The input was incorrect try again")
+                continue
+        if choise == 2 or choise == 3:
+            try:
+                helpcentre = HelpCentre(person_id = person.id, status = choise)
+                db.session.add(helpcentre)
+                db.session.commit()
+            except:
+                print("something went wrong in section choise 2/3...")
+                db.session.rollback()
+
+        elif choise == 4 or choise == 5:
+            try:
+                vets = Vet(person_id = person.id)
+                db.session.add(vets)
+                db.session.commit()
+            except:
+                print("something went wrong in section choise 4/5...")
+                db.session.rollback()
+
+        elif choise == 6 or choise == 7:
+            try:
+                helpcentre = HelpCentre(person_id = person.id, status = choise)
+                vets = Vet(person.id)
+                db.session.add(vets, helpcentre)
+                db.session.commit()
+            except:
+                print("something went wrong in section choise 6/7...")
+                db.session.rollback()
+
+        if choise == 1 or choise == 3 or choise == 5 or choise == 7:
+            try:
+                owners = Owner(person_id = person.id)
+                db.session.add(owners)
+                db.session.commit()
+            except:
+                print("something went wrong in section choise 1/3/5/7...")
+                db.session.rollback()
+
+        return person
 
 
-
-def init_login(mail, password):
-    login = Login(mail, password)
-    return login
-
-def init_person(name, lastname, mail, password, phone, address):
-    person = Person(name, lastname, mail, password, phone, address)
-    return person
-
-
-def register_pet(logged_in, person, login):
+def register_pet(person_id):
     while True:
 
         try:
@@ -35,43 +103,45 @@ def register_pet(logged_in, person, login):
             bmonth = int(input("Month: "))
             bday = int(input("Day: "))
             bdate = dt(byear, bmonth, bday)
+            owner_id = Owner.query.filter_by(person_id = person_id).one() #idk if this works or not
+            pet = Pet(name = petname, species = species,
+            breed = breed, gender = gender, birth_date = bdate, owner_id = owner_id)
+            db.session.add(pet)
+            db.session.commit()
             break
 
         except:
+            db.session.rollback()
             print("incorrect input, try again.")
             continue
 
-    pet = Pet(petname, species, breed, gender, bdate)
-    if logged_in == False:
-        pet.register(person.person_id) #its a class here, dont get confused
-    elif logged_in == True:
-        pet.register(login.person_id) #same here
+    
+    
+
 
 # log in fuctions from here
 
 
-def owner_login(login, action):
+def owner_login(person_id, action):
     if action == "1":
 
-        try:
-            connection.rollback()
-            curs.execute("BEGIN;")
-
-            owner_id = Convert_id.person_to_owner(login.person_id)
-            pets = Pet.from_db(owner_id)
-            connection.commit()
+        try:   
+            owner_id = Owner.query.filter_by(person_id = person_id).one()
+            pets = Pet.query.filter_by(owner_id = owner_id).all()
             if pets is None:
-                print("You dont have pets...")
+                print("You dont have any pets...")
             else:
                 for pet in pets:
-                    print(str(pet))
-            
+                    print(f"Pet ID: {pet.id}, Pet name:"
+                    f" {pet.name}, Type: {pet.species},"
+                    f" Breed: {pet.breed}\nResent vaccination: {pet.resent_vaccination}")
+       
         except:
-            connection.rollback()
+            db.session.rollback()
             raise
 
     elif action == "2":
-        owner_id = Convert_id.person_to_owner(login.person_id)
+        owner_id = Owner.query.filter_by(person_id = person_id).one()
         curs.execute(
             "SELECT * FROM visits WHERE owner_id = %s;", (owner_id, ))
         result = curs.fetchone()
