@@ -1,11 +1,14 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from datetime import date as dt
-
+from models import session
 from general_logic import (
-
-
+    login,
+    register_person,
+    register_pet,
+    owner_login,
+    vet_login,
+    staff_login,
 )
+
 
 # program body starts here
 while True:
@@ -15,9 +18,9 @@ while True:
         mail = input("Please enter your email: ")
         password = input("Please enter your password: ")
 
-        login = init_login(mail, password) #initialising in general_logic
+        person = login(mail, password) #initialising person in general_logic
 
-        login.login()
+
         if login.log == "No":
             print("Login was unsuccesfull, try again...")
             continue
@@ -39,10 +42,12 @@ while True:
                 elif action == "q":
                     exit = True
                     break
+                
                 else:
                     owner_login(login, action)
-                
+                    
             if exit == True:
+                session.close()
                 break
             else:
                 continue
@@ -267,27 +272,26 @@ while True:
 
     elif action == "register":
         logged_in = False
+        person = register_person()
+        print(person)
+        haspet = input(
+            "Do you want to register a pet?\n(y - yes / n - no): ")
 
+        if haspet.lower() == "y" or haspet.lower() == "yes":
+            register_pet(logged_in, person, None)
 
-            haspet = input(
-                "Do you want to register a pet?\n(y - yes / n - no): ")
-
-            if haspet.lower() == "y" or haspet.lower() == "yes":
-                register_pet(logged_in, person, None)
-
-            elif haspet.lower() == "n" or haspet.lower() == "no":
-                log = input(
-                    "do you want to return to main menu? (y - yes / n - exit): ")
-                if log == "n":
-                    break
-
-                else:
-                    continue
+        elif haspet.lower() == "n" or haspet.lower() == "no":
+            log = input(
+                "do you want to return to main menu? (y - yes / n - exit): ")
+            if log == "n":
+                break
 
             else:
                 continue
-            print("registration has been succesfull!")
+
         else:
             continue
-curs.close()
-connection.close()
+        print("registration has been succesfull!")
+    else:
+        continue
+
