@@ -4,17 +4,14 @@ from sqlalchemy.orm import sessionmaker
 
 from sqlalchemy.orm import relationship
 
+
+engine = create_engine('postgresql://postgres:postgres@localhost:5432/petv2')
+# engine = create_engine('sqlite:///:test.db', echo=True)
 Base = declarative_base()
 
-engine = create_engine('postgresql://postgres:postgres@localhost:5432/testdb')
-
-Base.metadata.create_all(engine)
-
-Session = sessionmaker()
-session = Session()
-class Status(Base):
-    __tablename__ = 'statuses'
-    status = Column(Integer, primary_key=True, unique=True)
+class Type(Base):
+    __tablename__ = 'types'
+    type = Column(Integer, primary_key=True, unique=True)
     explanation = Column(String(50))
 
 
@@ -27,8 +24,8 @@ class Person(Base):
     mail = Column(String(100), unique=True)
     address = Column(String(100))
     created = Column(DateTime)
-    status = Column(Integer, ForeignKey('statuses.status'))
-    status_rel = relationship(Status)
+    type = Column(Integer, ForeignKey('types.type'))
+    person_type = relationship(Type)
     password = Column(String(100), nullable=False)
 
 
@@ -36,7 +33,7 @@ class Owner(Base):
     __tablename__ = 'owners'
     owner_id = Column(Integer, primary_key=True)
     person_id = Column(Integer, ForeignKey('persons.id'))
-    person_rel = relationship(Person)
+    person = relationship(Person)
 
 
 class Speciality(Base):
@@ -50,17 +47,9 @@ class Vet(Base):
     __tablename__ = 'vets'
     vet_id = Column(Integer, primary_key=True)
     person_id = Column(Integer, ForeignKey('persons.id'))
-    person_rel = relationship(Person)
-
-
-class SpecCombo(Base):
-    __tablename__ = 'spec_combo'
-    id = Column(Integer, primary_key=True)
-    vet_id = Column(Integer, ForeignKey('vets.vet_id'))
-    vet_rel = relationship(Vet)
+    person = relationship(Person)
     spec_id = Column(Integer, ForeignKey('specialities.spec_id'))
-    spec_rel = relationship(Speciality)
-
+    speciality = relationship(Speciality)
 
 class Pet(Base):
     __tablename__ = 'pets'
@@ -74,30 +63,33 @@ class Pet(Base):
     name = Column(String(50))
     birth_date = Column(Date)
     owner_id = Column(Integer, ForeignKey('owners.owner_id'))
-    owner_rel = relationship(Owner)
+    owner = relationship(Owner)
 
 
 class HelpCentre(Base):
     __tablename__ = 'help_centre'
     staff_id = Column(Integer, primary_key=True)
     person_id = Column(Integer, ForeignKey('persons.id'))
-    person_rel = relationship(Person)
-    status = Column(Integer)
+    person = relationship(Person)
+    type = Column(Integer, ForeignKey('types.type'))
 
 
 class Visit(Base):
     __tablename__ = 'visits'
     visit_id = Column(Integer, primary_key=True)
     vet_id = Column(Integer, ForeignKey('vets.vet_id'))
-    vet_rel = relationship(Vet)
+    vet = relationship(Vet)
     pet_id = Column(Integer, ForeignKey('pets.pet_id'))
-    pet_rel = relationship(Pet)
+    pet = relationship(Pet)
     owner_id = Column(Integer, ForeignKey('owners.owner_id'))
-    owner_rel = relationship(Owner)
+    owner = relationship(Owner)
     diagnosis = Column(String(100))
     treatment = Column(String(50))
     date = Column(Date)
 
 
+Base.metadata.create_all(engine)
 
+Session = sessionmaker(bind=engine)
 
+session = Session()

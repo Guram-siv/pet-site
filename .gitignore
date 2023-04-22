@@ -3,3 +3,8 @@ __pycache__
 vetsite.sql
 teststuff
 pysql.py
+basic.py
+example.db
+SqlDb
+.env
+:test.db

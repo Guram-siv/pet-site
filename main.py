@@ -14,22 +14,26 @@ from general_logic import (
 while True:
     action = input("login or register\n: ")
     if action == "login":
-        logged_in = True
         mail = input("Please enter your email: ")
         password = input("Please enter your password: ")
 
         person = login(mail, password) #initialising person in general_logic
 
 
-        if login.log == "No":
+        if person is None:
             print("Login was unsuccesfull, try again...")
+            logged_in = False
             continue
 
-        elif login.log == "Yes":
-            print("Login was succesfull...")
+        elif person != None:
+            print("Login was succesfull...\n")
+            logged_in = True
             pass
 
-        if login.person_type == 1:
+        else:
+            print("something went wrong with login...")
+
+        if person.type == 1:
             while True:
                 action = input(
                 "\n\nWhat should we do?\n1) my pets\n2) my visits\n3) add pet \n0) log out \nq) Exit program \n: ")
@@ -44,7 +48,7 @@ while True:
                     break
                 
                 else:
-                    owner_login(login, action)
+                    owner_login(person, action)
                     
             if exit == True:
                 session.close()
@@ -52,7 +56,7 @@ while True:
             else:
                 continue
 
-        elif login.person_type == 2:
+        elif person.type == 2:
             while True:
 
                 action = input("\n\nwhat action should we do?\n1) List every owner\n2)"
@@ -69,13 +73,14 @@ while True:
                     break
                 
                 else:
-                    staff_login(login, login.person_type, action)
+                    staff_login(person, action)
             if exit == True:
+                session.close()
                 break
             else:
                 continue
         
-        elif login.person_type == 3:
+        elif person.type == 3:
             while True:
 
                 action = input("\n\nwhat action should we do?\n1) List every owner\n2)"
@@ -91,12 +96,13 @@ while True:
                     exit = True
                     break
                 else:
-                    staff_login(login, login.person_type, action)
+                    staff_login(person, action)
             if exit == True:
+                session.close()
                 break
             else:
                 continue
-        elif login.person_type == 4:
+        elif person.type == 4:
             while True:
 
                 action = input("What action should we perform?\n"
@@ -115,15 +121,16 @@ while True:
                     break
 
                 else:
-                    vet_login(login, login.person_type, action)
+                    vet_login(person, action)
 
             if exit == True:
+                session.close()
                 break
 
             else:
                 continue
         
-        elif login.person_type == 5:
+        elif person.type == 5:
             while True:
 
                 action = input("What action should we perform?\n"
@@ -142,14 +149,15 @@ while True:
                     break
 
                 else:
-                    vet_login(login, login.person_type, action)
+                    vet_login(person, action)
             if exit == True:
+                session.close()
                 break
 
             else:
                 continue
 
-        elif login.person_type == 6:
+        elif person.type == 6:
 
             while True:
                 choose = input(
@@ -171,7 +179,7 @@ while True:
                             break
 
                         else:
-                            staff_login(login, login.person_type, action)
+                            staff_login(person, action)
 
                 elif choose == "2":
                     print("You are in vet sub menu")
@@ -191,7 +199,7 @@ while True:
                             exit = True
                             break
                         else:
-                            vet_login(login, login.person_type, action)
+                            vet_login(person, action)
                     if exit == True:
                         break
 
@@ -208,9 +216,10 @@ while True:
                     break
                     
             if exit == True:
+                session.close()
                 break
 
-        elif login.person_type == 7:
+        elif person.type == 7:
 
             while True:
                 choose = input(
@@ -232,7 +241,7 @@ while True:
                             exit = True
                             break
                         else:
-                            staff_login(login, login.person_type, action)
+                            staff_login(person, action)
                     if exit == True:
                         break
                     else:
@@ -256,7 +265,7 @@ while True:
                             break
 
                         else:
-                            vet_login(login, login.person_type, action)
+                            vet_login(person, action)
 
                 if choose == "0":
                     print("\n\n")
@@ -268,17 +277,18 @@ while True:
                     break
                     
             if exit == True:
+                session.close()
                 break
 
     elif action == "register":
         logged_in = False
         person = register_person()
-        print(person)
+
         haspet = input(
             "Do you want to register a pet?\n(y - yes / n - no): ")
 
         if haspet.lower() == "y" or haspet.lower() == "yes":
-            register_pet(logged_in, person, None)
+            register_pet(person.id)
 
         elif haspet.lower() == "n" or haspet.lower() == "no":
             log = input(
